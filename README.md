@@ -49,8 +49,9 @@ company-comparables-azure-function/
    npm run lint
    ```
 3. Copy `.env.example` to `.env` or create `local.settings.json` and provide the required variables:
-   - `SEARXNG_URL` – URL of your SearXNG instance
-   - `CLIENT_ID`, `CLIENT_SECRET`, `TENANT_ID`, `TOKEN_URL` – Azure AD credentials
+    - `SEARXNG_URL` – URL of your SearXNG instance
+    - `CLIENT_ID`, `CLIENT_SECRET`, `TENANT_ID`, `TOKEN_URL` – Azure AD credentials
+    - `CACHE_TIMEOUT` – cache duration for web search results in milliseconds (default 300000)
 4. Start the functions host:
    ```bash
    npm run dev

@@ -12,7 +12,12 @@ class SearchService {
         this.tokenExpiry = null;
         
         this.cache = new Map();
-        this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+        const envTimeout = parseInt(process.env.CACHE_TIMEOUT, 10);
+        if (!isNaN(envTimeout) && envTimeout > 0) {
+            this.cacheTimeout = envTimeout;
+        } else {
+            this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+        }
         
         this.stats = {
             totalRequests: 0,
