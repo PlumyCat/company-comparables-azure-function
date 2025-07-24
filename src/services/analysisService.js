@@ -546,32 +546,275 @@ class AnalysisService {
         }));
     }
 
-    // Placeholder methods for completeness
-    extractIndustry(content) { return null; }
-    extractEmployeeCount(content) { return null; }
-    extractRevenue(content) { return null; }
-    extractCompetitors(content, name) { return []; }
-    extractActivities(content) { return []; }
-    extractHeadquarters(content, url) { return null; }
-    extractFoundingYear(content) { return null; }
-    extractWebsite(url) { return null; }
-    extractFundingInfo(content) { return null; }
-    extractKeyPoint(result, query) { return null; }
-    extractCompanyDescription(name, content) { return `Entreprise ${name}`; }
-    
-    isRelevantResult(companyName, result) { return true; }
-    isValidCompanyName(name) { return name && name.length >= 3 && name.length <= 60; }
-    isHighQualityCompanyName(name) { return this.isValidCompanyName(name); }
-    
-    determineSizeCategory(profile) { return 'medium'; }
-    cleanAndValidateProfile(profile) { return profile; }
-    areSectorsRelated(s1, s2) { return false; }
-    
-    calculateSizeScore(ref, comp) { return 50; }
-    calculateGeoScore(ref, comp) { return 50; }
-    calculateStageScore(ref, comp) { return 50; }
-    
-    inferSectorFromName(name) { return 'Technology'; }
+    // --- Extraction helpers -------------------------------------------------
+    extractIndustry(content) {
+        const industries = {
+            'IT Consulting': ['it consulting', 'technology consulting', 'digital consulting', 'systems integration'],
+            'Software Development': ['software development', 'application development', 'custom software'],
+            'Business Consulting': ['business consulting', 'strategy consulting', 'management consulting'],
+            'Outsourcing': ['outsourcing', 'managed services', 'bpo'],
+            'Cloud Services': ['cloud services', 'cloud computing', 'saas', 'infrastructure as a service'],
+            'Data Analytics': ['data analytics', 'big data', 'business intelligence', 'data science']
+        };
+
+        const lower = content.toLowerCase();
+        for (const [industry, keywords] of Object.entries(industries)) {
+            if (keywords.some(k => lower.includes(k))) {
+                return industry;
+            }
+        }
+        return null;
+    }
+
+    extractEmployeeCount(content) {
+        const patterns = [
+            /(\d{1,3}(?:[,\s]\d{3})+)\s*(?:employees|employés|people|personnes|staff|collaborateurs)/gi,
+            /(\d{1,3})[\s,]*k\s*(?:employees|employés|people|personnes|staff|collaborateurs)/gi,
+            /workforce.*?(\d{1,3}(?:[,\s]\d{3})+)/gi,
+            /emploie.*?(\d{1,3}(?:[,\s]\d{3})+).*?(?:personnes|employés|collaborateurs)/gi,
+            /(\d{2,6})\s*(?:employees|employés|people|personnes|staff|collaborateurs)/gi
+        ];
+
+        for (const pattern of patterns) {
+            const match = content.match(pattern);
+            if (match) {
+                let number = parseInt(match[1].replace(/[,\s]/g, ''));
+                if (match[0].toLowerCase().includes('k')) {
+                    number *= 1000;
+                }
+                if (number >= 1 && number <= 5000000) {
+                    return number;
+                }
+            }
+        }
+        return null;
+    }
+
+    extractRevenue(content) {
+        const patterns = [
+            /chiffre.*?affaires.*?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+            /(?:revenue|revenus?).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+            /(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?).*?(?:revenue|revenus?|chiffre)/gi,
+            /(?:turnover|ca).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+            /(?:revenue|revenus?|chiffre.*?affaires).*?[€$]?(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?)/gi,
+            /(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?).*?(?:revenue|revenus?|euros?|dollars?)/gi
+        ];
+
+        for (const pattern of patterns) {
+            const match = content.match(pattern);
+            if (match) {
+                let amount = parseFloat(match[1].replace(/[,\s]/g, '').replace(',', '.'));
+                if (isNaN(amount)) continue;
+                if (match[0].toLowerCase().includes('milliard') || match[0].toLowerCase().includes('billion')) {
+                    amount *= 1000;
+                }
+                if (amount >= 1 && amount <= 1000000) {
+                    return `€${Math.round(amount)}M`;
+                }
+            }
+        }
+        return null;
+    }
+
+    extractCompetitors(content, name) {
+        const competitors = [];
+        const known = ['accenture', 'deloitte', 'ibm', 'tcs', 'infosys', 'wipro', 'atos', 'capgemini', 'cgi'];
+        const lower = content.toLowerCase();
+        const base = name ? name.toLowerCase() : '';
+        for (const comp of known) {
+            if (comp !== base && lower.includes(comp)) {
+                competitors.push(comp.charAt(0).toUpperCase() + comp.slice(1));
+            }
+        }
+        return competitors;
+    }
+
+    extractActivities(content) {
+        const activities = [];
+        const activityKeywords = {
+            'Digital Transformation': ['digital transformation', 'digitalization'],
+            'IT Consulting': ['it consulting', 'technology consulting'],
+            'Cloud Services': ['cloud', 'cloud services'],
+            'Data Analytics': ['data analytics', 'big data', 'analytics'],
+            'Cybersecurity': ['cybersecurity', 'security'],
+            'Outsourcing': ['outsourcing', 'managed services']
+        };
+        const lower = content.toLowerCase();
+        for (const [activity, keywords] of Object.entries(activityKeywords)) {
+            if (keywords.some(k => lower.includes(k))) {
+                activities.push(activity);
+            }
+        }
+        return activities.slice(0, 5);
+    }
+
+    extractHeadquarters(content, url) {
+        const patterns = [
+            /(?:headquartered|siège.*?social).*?(?:in|à|en)\s*([A-Z][a-z]+)/gi,
+            /based.*?in\s*([A-Z][a-z]+)/gi
+        ];
+        const knownCities = ['Paris','London','New York','Tokyo','Berlin','Madrid','Rome','Amsterdam','Brussels','Geneva','Milan'];
+        for (const pattern of patterns) {
+            const match = pattern.exec(content);
+            if (match && knownCities.includes(match[1])) {
+                return match[1];
+            }
+        }
+        if (url) {
+            try {
+                const u = new URL(url);
+                const host = u.hostname;
+                const city = host.split('.')[0];
+                if (knownCities.includes(city.charAt(0).toUpperCase() + city.slice(1))) {
+                    return city.charAt(0).toUpperCase() + city.slice(1);
+                }
+            } catch { /* noop */ }
+        }
+        return null;
+    }
+
+    extractFoundingYear(content) {
+        const patterns = [
+            /(?:founded|created|established|créée?|fondée?).*?(?:in|en)\s*(\d{4})/gi,
+            /(?:depuis|since)\s*(\d{4})/gi,
+            /\((\d{4})\)/g
+        ];
+        const currentYear = new Date().getFullYear();
+        for (const pattern of patterns) {
+            const match = pattern.exec(content);
+            if (match) {
+                const year = parseInt(match[1]);
+                if (year >= 1800 && year <= currentYear) {
+                    return year;
+                }
+            }
+        }
+        return null;
+    }
+
+    extractWebsite(url) {
+        if (!url) return null;
+        try {
+            const parsed = new URL(url);
+            const host = parsed.hostname.toLowerCase();
+            if (host.includes('linkedin') || host.includes('wikipedia') || host.includes('google')) {
+                return null;
+            }
+            return `${parsed.protocol}//${parsed.hostname}`;
+        } catch {
+            return null;
+        }
+    }
+
+    extractFundingInfo(content) {
+        const match = content.match(/series\s+(a|b|c|d)|seed funding|venture round/iu);
+        if (match) {
+            return { stage: match[0].toLowerCase(), detail: match[0] };
+        }
+        return null;
+    }
+
+    extractKeyPoint(result, query) {
+        const title = result.title || '';
+        if (title.length > 5 && title.length < 150) {
+            return { text: title, source: result.url, query };
+        }
+        return null;
+    }
+
+    extractCompanyDescription(name, content) {
+        const lower = content.toLowerCase();
+        const index = lower.indexOf(name.toLowerCase());
+        if (index !== -1) {
+            return content.substring(Math.max(0, index - 50), index + 150).replace(/\s+/g, ' ').trim();
+        }
+        return content.substring(0, 200).replace(/\s+/g, ' ').trim();
+    }
+
+    isRelevantResult(companyName, result) {
+        const text = `${result.title} ${result.content}`.toLowerCase();
+        return text.includes(companyName.toLowerCase());
+    }
+    isValidCompanyName(name) {
+        return name && name.length >= 3 && name.length <= 60;
+    }
+
+    isHighQualityCompanyName(name) {
+        return this.isValidCompanyName(name) && !/(test|demo|sample)/i.test(name);
+    }
+
+    determineSizeCategory(profile) {
+        if (profile.employees) {
+            if (profile.employees < 50) return 'small';
+            if (profile.employees < 250) return 'medium';
+            if (profile.employees < 1000) return 'large';
+            return 'enterprise';
+        }
+        if (profile.revenue) {
+            const amount = parseInt(profile.revenue.replace(/[€M]/g, ''));
+            if (amount < 10) return 'small';
+            if (amount < 100) return 'medium';
+            if (amount < 1000) return 'large';
+            return 'enterprise';
+        }
+        return 'medium';
+    }
+
+    cleanAndValidateProfile(profile) {
+        if (Array.isArray(profile.main_activities)) {
+            profile.main_activities = [...new Set(profile.main_activities)];
+        }
+        if (Array.isArray(profile.competitors_mentioned)) {
+            profile.competitors_mentioned = [...new Set(profile.competitors_mentioned)];
+        }
+        return profile;
+    }
+
+    areSectorsRelated(s1, s2) {
+        if (!s1 || !s2 || s1 === s2) return s1 === s2;
+        const k1 = this.sectorKeywords[s1] || [];
+        const k2 = this.sectorKeywords[s2] || [];
+        return k1.some(k => k2.includes(k));
+    }
+
+    calculateSizeScore(ref, comp) {
+        if (ref.employees && comp.employees) {
+            const diff = Math.abs(ref.employees - comp.employees);
+            const avg = (ref.employees + comp.employees) / 2;
+            const ratio = diff / avg;
+            return Math.max(0, 100 - Math.min(100, Math.round(ratio * 100)));
+        }
+        return 50;
+    }
+
+    calculateGeoScore(ref, comp) {
+        if (ref.country && comp.country) {
+            if (ref.country === comp.country) return 100;
+        }
+        if (ref.region && comp.region && ref.region === comp.region) return 70;
+        return 40;
+    }
+
+    calculateStageScore(ref, comp) {
+        if (ref.founding_year && comp.founding_year) {
+            const diff = Math.abs(ref.founding_year - comp.founding_year);
+            if (diff < 3) return 100;
+            if (diff < 10) return 70;
+            if (diff < 20) return 50;
+            return 30;
+        }
+        return 50;
+    }
+
+    inferSectorFromName(name) {
+        const lower = name.toLowerCase();
+        for (const [sector, keywords] of Object.entries(this.sectorKeywords)) {
+            if (keywords.some(k => lower.includes(k))) {
+                return sector;
+            }
+        }
+        return 'Technology';
+    }
     createFallbackProfile(name) {
         return {
             name: name,
@@ -584,6 +827,16 @@ class AnalysisService {
     }
 
     async enrichWithSectorData(profile) {
+        const sectorInfos = {
+            'Technology': 'Activités liées au développement logiciel et services numériques',
+            'Finance': 'Secteur des services financiers et bancaires',
+            'Healthcare': 'Industrie médicale et pharmaceutique',
+            'Energy': 'Production et distribution d\'énergie',
+            'Retail': 'Commerce et distribution de biens'
+        };
+        if (profile.sector && sectorInfos[profile.sector]) {
+            profile.sectorDescription = sectorInfos[profile.sector];
+        }
         return profile;
     }
 }

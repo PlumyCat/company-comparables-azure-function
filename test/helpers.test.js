@@ -29,6 +29,11 @@ describe('helpers utility functions', () => {
 
   test('formatNumber formats number with spaces', () => {
     expect(formatNumber(1000000)).toBe('1\u202F000\u202F000');
+    expect(formatCurrency(1000)).toMatch('1 000');
+  });
+
+  test('formatNumber formats number with spaces', () => {
+    expect(formatNumber(1000000)).toBe('1 000 000');
   });
 
   test('isValidUrl detects valid urls', () => {

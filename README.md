@@ -1,259 +1,112 @@
-﻿# Company Comparables Azure Function
+# Company Comparables Azure Function
 
-Cette Azure Function fournit des services d'analyse financière et de recherche de sociétés comparables via des endpoints HTTP RESTful.
+This repository contains a set of Node.js Azure Functions that expose HTTP endpoints for searching and analysing company information. The code relies on a self‑hosted [SearXNG](https://searxng.org/) instance for web scraping and uses simple heuristics to enrich profiles with sector, geography and financial data.
 
-## 🚀 Vue d'ensemble
+## Overview
 
-Cette fonction serverless offre les mêmes capacités que le serveur MCP original, mais adaptée pour Azure Functions :
+The main entry point is [`src/index.js`](src/index.js) which registers the different functions. Each endpoint accepts JSON requests and returns JSON responses.
 
-- **Recherche de sociétés comparables** - Trouve des entreprises similaires par secteur et critères
-- **Analyse financière** - Récupère et traite les données financières d'entreprises
-- **Recherche web de fallback** - Complète les données manquantes via recherche web
-- **Validation des données** - Détecte et valide la qualité des données
+### Available Functions
 
-## 📁 Structure du projet
+| Function            | Method | Description                                       |
+|---------------------|--------|---------------------------------------------------|
+| `searchCompany`     | POST   | Search the web for basic company information.     |
+| `getCompanyDetails` | POST   | Build a detailed profile from search results.     |
+| `findComparables`   | POST   | Look for companies similar to a reference one.    |
+| `analyzeMetrics`    | POST   | Compute advanced metrics and benchmarking.        |
+| `testConnection`    | GET/POST | Check that the SearXNG instance is reachable.  |
+
+See the `src/functions` directory for the implementation of each handler.
+
+## Project Layout
 
 ```
 company-comparables-azure-function/
-├── host.json                    # Configuration Azure Functions
-├── local.settings.json          # Variables d'environnement locales  
-├── package.json                 # Dépendances npm
-├── README.md                    # Cette documentation
+├── host.json               # Azure Functions host configuration
+├── package.json            # Node.js dependencies and scripts
+├── .env.example            # Example environment variables
 ├── src/
-│   ├── index.js                 # Handler principal Azure Function
-│   ├── data/
-│   │   └── sectorMapping.js     # Mapping des secteurs d'activité
-│   ├── services/
-│   │   ├── financialApiService.js    # Intégration APIs financières
-│   │   ├── webSearchService.js       # Service de recherche web
-│   │   └── companyProfileService.js  # Profils d'entreprises
-│   └── utils/
-│       └── dataValidation.js    # Validation et détection de données
-└── docs/
-    └── [documentation]
+│   ├── index.js            # Azure Functions setup
+│   ├── functions/          # Individual HTTP handlers
+│   ├── services/           # Reusable services (web search, analysis)
+│   └── utils/              # Helper utilities
 ```
 
-## 🛠️ Installation et configuration
+## Requirements
 
-### Prérequis
+- Node.js 18 or higher
+- [Azure Functions Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local) v4
+- Access to a SearXNG instance secured with Azure AD
 
-- Node.js >= 18.0.0
-- Azure Functions Core Tools v4
-- Compte Azure avec Function App
+## Local Development
 
-### Installation locale
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Copy `.env.example` to `.env` or create `local.settings.json` and provide the required variables:
+   - `SEARXNG_URL` – URL of your SearXNG instance
+   - `CLIENT_ID`, `CLIENT_SECRET`, `TENANT_ID`, `TOKEN_URL` – Azure AD credentials
+3. Start the functions host:
+   ```bash
+   npm run dev
+   ```
 
-1. **Cloner et installer les dépendances** :
-```bash
-cd F:\b-and-capital\company-comparables-azure-function
-npm install
-```
+## HTTP Endpoints
 
-2. **Configurer les variables d'environnement** :
-Éditer `local.settings.json` avec vos clés API :
+Requests must be sent with the `Content-Type: application/json` header. Example payloads are shown below.
+
+### `POST /api/searchCompany`
 ```json
 {
-  "Values": {
-    "ALPHA_VANTAGE_KEY": "votre_clé_ici",
-    "FINNHUB_KEY": "votre_clé_ici", 
-    "FMP_KEY": "votre_clé_ici",
-    "BRAVE_SEARCH_API_KEY": "votre_clé_ici"
-  }
+  "query": "Microsoft"
 }
 ```
 
-3. **Démarrer en mode développement** :
-```bash
-npm run dev
-# ou
-func start --javascript
-```
-
-## 🌐 Endpoints disponibles
-
-### GET /api/health
-Vérification de l'état du service
-
-**Réponse** :
+### `POST /api/getCompanyDetails`
 ```json
 {
-  "success": true,
-  "data": {
-    "status": "healthy",
-    "timestamp": "2024-01-XX",
-    "version": "1.0.0",
-    "services": {
-      "financialApi": "ready",
-      "webSearch": "ready", 
-      "companyProfile": "ready"
-    }
-  }
+  "name": "Microsoft" 
 }
 ```
 
-### GET|POST /api/companies/search
-Recherche de sociétés comparables
-
-**Paramètres** :
-- `companyName` (requis) - Nom de l'entreprise de référence
-- `sector` (optionnel) - Secteur d'activité
-- `country` (optionnel, défaut: "US") - Pays
-- `maxResults` (optionnel, défaut: 10) - Nombre max de résultats
-
-**Exemple GET** :
-```
-GET /api/companies/search?companyName=Microsoft&sector=Technology&maxResults=5
-```
-
-**Exemple POST** :
+### `POST /api/findComparables`
 ```json
 {
   "companyName": "Microsoft",
-  "sector": "Technology",
-  "country": "US",
   "maxResults": 5
 }
 ```
 
-### GET|POST /api/companies/{symbol}/analyze
-Analyse financière détaillée d'une société
-
-**Paramètres URL** :
-- `symbol` - Symbole boursier (ex: MSFT)
-
-**Réponse exemple** :
+### `POST /api/analyzeMetrics`
 ```json
 {
-  "success": true,
-  "data": {
-    "symbol": "MSFT",
-    "companyName": "Microsoft Corporation",
-    "financialMetrics": { ... },
-    "marketData": { ... },
-    "profile": { ... }
-  }
+  "companyName": "Microsoft",
+  "includeComparables": true
 }
 ```
 
-### POST /api/search/web
-Recherche web pour données manquantes
+### `GET /api/testConnection`
+Returns a JSON object describing the connectivity status.
 
-**Paramètres** :
-```json
-{
-  "query": "terme de recherche",
-  "maxResults": 5,
-  "focusFinancial": true
-}
-```
+## Deployment
 
-## 🚀 Déploiement Azure
-
-### Déploiement via Azure CLI
-
-1. **Se connecter à Azure** :
+Deploy the function app using the Azure CLI:
 ```bash
 az login
-```
-
-2. **Créer un groupe de ressources** :
-```bash
-az group create --name rg-company-comparables --location "West Europe"
-```
-
-3. **Créer la Function App** :
-```bash
+az group create --name rg-comparables --location "West Europe"
 az functionapp create \
-  --resource-group rg-company-comparables \
+  --resource-group rg-comparables \
   --consumption-plan-location "West Europe" \
   --runtime node \
   --runtime-version 18 \
   --functions-version 4 \
   --name company-comparables-func \
-  --storage-account votrecompte
-```
-
-4. **Déployer le code** :
-```bash 
+  --storage-account <storage>
 func azure functionapp publish company-comparables-func
 ```
+Remember to configure the same environment variables in the Azure portal.
 
-### Configuration des variables d'environnement Azure
+## License
 
-```bash
-az functionapp config appsettings set --name company-comparables-func \
-  --resource-group rg-company-comparables \
-  --settings \
-    ALPHA_VANTAGE_KEY="votre_clé" \
-    FINNHUB_KEY="votre_clé" \
-    FMP_KEY="votre_clé" \
-    BRAVE_SEARCH_API_KEY="votre_clé"
-```
-
-## 🔧 Scripts disponibles
-
-- `npm start` - Démarrer la function localement
-- `npm run dev` - Mode développement avec auto-reload
-- `npm test` - Exécuter les tests
-- `npm run deploy` - Déployer vers Azure
-
-## 📊 Monitoring et logging
-
-Les logs sont automatiquement envoyés vers Azure Application Insights. Vous pouvez les consulter via :
-
-- Azure Portal > Function App > Monitoring
-- Application Insights queries
-- Live Metrics Stream
-
-## 🔄 Différences avec le projet MCP
-
-| Aspect | Projet MCP | Azure Function |
-|--------|------------|----------------|
-| **Transport** | Protocole MCP (stdio) | HTTP REST API |
-| **Interface** | Claude/Cursor | Appels HTTP directs |
-| **Déploiement** | Serveur local/distant | Serverless Azure |
-| **Scalabilité** | Manuelle | Automatique |
-| **Coût** | Serveur permanent | Pay-per-use |
-
-## 📚 Services réutilisés
-
-Les services métier suivants ont été migrés depuis le projet MCP :
-
-- **FinancialAPIService** - APIs Alpha Vantage, Finnhub, FMP
-- **WebSearchService** - Recherche Brave Search  
-- **CompanyProfileService** - Enrichissement profils
-- **DataValidation** - Validation et détection qualité
-
-## 🛡️ Sécurité
-
-- Authentification via Azure Active Directory (optionnel)
-- Rate limiting automatique Azure
-- Variables d'environnement sécurisées
-- CORS configuré pour domaines autorisés
-
-## 🚦 Statut du projet
-
-- ✅ Configuration Azure Functions
-- ✅ Migration des services métier
-- ✅ Endpoints de base (health, search)
-- 🔄 Tests et validation
-- 🔄 Documentation complète
-- ⏳ Déploiement production
-
-## 💡 Utilisation recommandée
-
-Cette Azure Function est idéale pour :
-
-- **Applications web** nécessitant des données financières
-- **Intégrations API** dans des systèmes existants  
-- **Microservices** d'analyse financière
-- **Dashboards** de sociétés comparables
-- **Outils d'aide à la décision** d'investissement
-
----
-
-## 🔗 Liens utiles
-
-- [Documentation Azure Functions](https://docs.microsoft.com/azure/azure-functions/)
-- [Projet MCP original](../Recherche%20de%20sociétés%20comparables/) 
-- [Azure Functions Core Tools](https://github.com/Azure/azure-functions-core-tools)
+This project is licensed under the MIT License.
