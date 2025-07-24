@@ -1,6 +1,7 @@
 const { SearchService } = require('../services/searchService');
 const { AnalysisService } = require('../services/analysisService');
 const { validateInput, createResponse, createErrorResponse } = require('../utils/helpers');
+const logger = require('../utils/logger');
 
 const searchService = new SearchService();
 const analysisService = new AnalysisService();
@@ -36,7 +37,7 @@ async function findComparables(request, context) {
         }
 
         // STEP 1: Analyze the reference company with SearchService
-        console.log("🔍 Analyse de l'entreprise de référence...");
+        logger.info("🔍 Analyse de l'entreprise de référence...");
         const referenceSearchResults = await searchService.searchCompanyInfo(companyName, {
             language: 'fr',
             page: 1
@@ -51,7 +52,7 @@ async function findComparables(request, context) {
 
         // Create the reference profile
         const referenceProfile = createProfileFromSearch(companyName, referenceSearchResults);
-        console.log("📋 Profil de référence:", {
+        logger.info("📋 Profil de référence:", {
             name: referenceProfile.name,
             sector: referenceProfile.sector,
             country: referenceProfile.country,
@@ -60,14 +61,14 @@ async function findComparables(request, context) {
 
         // STEP 2: Automatically generate search queries for comparables
         const searchQueries = generateComparableSearchQueries(referenceProfile, preferSameCountry);
-        console.log(`🔎 Génération de ${searchQueries.length} requêtes de recherche automatiques`);
+        logger.info(`🔎 Génération de ${searchQueries.length} requêtes de recherche automatiques`);
 
         // STEP 3: Search for comparable companies
         const allComparables = [];
         
         for (const query of searchQueries) {
             try {
-                console.log(`🔍 Recherche: "${query.search}"`);
+                logger.info(`🔍 Recherche: "${query.search}"`);
                 const searchResults = await searchService.searchWeb(query.search, {
                     language: 'fr',
                     page: 1,
@@ -80,7 +81,7 @@ async function findComparables(request, context) {
                     allComparables.push(...foundCompanies);
                 }
             } catch (error) {
-                console.log(`⚠️ Erreur recherche "${query.search}":`, error.message);
+                logger.info(`⚠️ Erreur recherche "${query.search}":`, error.message);
             }
         }
 

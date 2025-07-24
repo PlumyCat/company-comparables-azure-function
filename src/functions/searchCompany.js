@@ -1,6 +1,7 @@
 const { SearchService } = require('../services/searchService');
 const { AnalysisService } = require('../services/analysisService');
 const { validateInput, createResponse, createErrorResponse } = require('../utils/helpers');
+const logger = require('../utils/logger');
 
 const searchService = new SearchService();
 const analysisService = new AnalysisService();
@@ -31,13 +32,13 @@ async function searchCompany(request, context) {
         }
 
         // USE THE WORKING SEARCHSERVICE
-        console.log("🔍 Début recherche web avec SearchService...");
+        logger.info("🔍 Début recherche web avec SearchService...");
         const searchResults = await searchService.searchCompanyInfo(query, {
             language: 'fr',
             page: 1
         });
 
-        console.log("📊 Résultats de recherche:", {
+        logger.info("📊 Résultats de recherche:", {
             success: searchResults.success,
             totalQueries: searchResults.totalQueries,
             successfulQueries: searchResults.successfulQueries
@@ -52,14 +53,14 @@ async function searchCompany(request, context) {
         }
 
         // Analyze search results to extract information
-        console.log("🧠 Analyse des résultats de recherche...");
+        logger.info("🧠 Analyse des résultats de recherche...");
         let companyProfile;
         
         try {
             // First try AnalysisService if it can process the search results
             companyProfile = await analysisService.analyzeSearchResults(query, searchResults);
         } catch (analysisError) {
-            console.log("⚠️ AnalysisService échoué, création profil basique:", analysisError.message);
+            logger.info("⚠️ AnalysisService échoué, création profil basique:", analysisError.message);
             
             // Create a basic profile from the search results
             companyProfile = createBasicProfileFromSearch(query, searchResults);
@@ -120,7 +121,7 @@ async function searchCompany(request, context) {
 
 // IMPROVED EXTRACTION FUNCTIONS
 function createBasicProfileFromSearch(query, searchResults) {
-    console.log("🏗️ Création profil basique à partir des résultats web");
+    logger.info("🏗️ Création profil basique à partir des résultats web");
     
     // Gather all results
     const allResults = [];
@@ -266,7 +267,7 @@ function extractEmployeeCount(content) {
             
             // Validate: reasonable employee count (between 1 and 5 million)
             if (number >= 1 && number <= 5000000) {
-                console.log(`🧑‍💼 Employés trouvés: ${number} depuis "${match[0]}"`);
+                logger.info(`🧑‍💼 Employés trouvés: ${number} depuis "${match[0]}"`);
                 return number;
             }
         }
@@ -306,7 +307,7 @@ function extractRevenue(content) {
             
             // Validate: reasonable amount (between 1M€ and 1000000M€)
             if (amount >= 1 && amount <= 1000000) {
-                console.log(`💰 Revenus trouvés: €${amount}M depuis "${match[0]}"`);
+                logger.info(`💰 Revenus trouvés: €${amount}M depuis "${match[0]}"`);
                 return `€${Math.round(amount)}M`;
             }
         }
@@ -415,7 +416,7 @@ function extractLeadership(content) {
             const name = match[1];
             if (name && name.length > 3 && name.length < 50) {
                 leadership.push({ role, name });
-                console.log(`👔 Dirigeant trouvé: ${role} - ${name}`);
+                logger.info(`👔 Dirigeant trouvé: ${role} - ${name}`);
                 break; // Only one per role
             }
         }
@@ -458,7 +459,7 @@ function extractHeadquarters(content) {
             }
             
             if (city && knownCities.includes(city)) {
-                console.log(`🏢 Siège social trouvé: ${city} depuis "${match[0]}"`);
+                logger.info(`🏢 Siège social trouvé: ${city} depuis "${match[0]}"`);
                 return city;
             }
         }
@@ -496,7 +497,7 @@ function extractFoundingYear(content) {
             // Validate: realistic year for a company (between 1800 and current year)
             if (year >= 1800 && year <= currentYear) {
                 foundYears.add(year);
-                console.log(`📅 Année de création trouvée: ${year} depuis "${match[0]}"`);
+                logger.info(`📅 Année de création trouvée: ${year} depuis "${match[0]}"`);
             }
         }
     }

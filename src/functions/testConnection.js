@@ -1,5 +1,6 @@
 const { SearchService } = require('../services/searchService');
 const { createResponse, createErrorResponse } = require('../utils/helpers');
+const logger = require('../utils/logger');
 const searchService = new SearchService();
 
 async function testConnection(request, context) {
@@ -10,30 +11,30 @@ async function testConnection(request, context) {
     let testDetails = null;
 
     try {
-        console.log("🎯 DEBUT DU TEST DE CONNEXION");
+        logger.info("🎯 DEBUT DU TEST DE CONNEXION");
         
         // Connectivity test with detailed logs
         try {
-            console.log("📞 Appel de searchService.testConnection()...");
+            logger.info("📞 Appel de searchService.testConnection()...");
             isConnected = await searchService.testConnection();
-            console.log("✅ searchService.testConnection() terminé, résultat:", isConnected);
+            logger.info("✅ searchService.testConnection() terminé, résultat:", isConnected);
             testDetails = isConnected ? "Test de recherche réussi" : "Test de recherche échoué";
         } catch (err) {
-            console.error("❌ Exception dans searchService.testConnection():", err);
+            logger.error("❌ Exception dans searchService.testConnection():", err);
             isConnected = false;
             connectionError = err.message || String(err);
             testDetails = `Exception lors du test: ${connectionError}`;
             context.log.error('Erreur de connexion détaillée:', connectionError);
         }
 
-        console.log("📊 État après test:");
-        console.log("- isConnected:", isConnected);
-        console.log("- connectionError:", connectionError);
-        console.log("- testDetails:", testDetails);
+        logger.info("📊 État après test:");
+        logger.info("- isConnected:", isConnected);
+        logger.info("- connectionError:", connectionError);
+        logger.info("- testDetails:", testDetails);
 
         // Retrieve detailed statistics
         const stats = searchService.getServiceStats();
-        console.log("📈 Stats du service:", stats);
+        logger.info("📈 Stats du service:", stats);
 
         // Separate Azure AD authentication test
         let authTest = {
@@ -43,16 +44,16 @@ async function testConnection(request, context) {
         };
 
         try {
-            console.log("🔐 Test authentification Azure AD...");
+            logger.info("🔐 Test authentification Azure AD...");
             const token = await searchService.getAccessToken();
             authTest = {
                 success: true,
                 error: null,
                 token: token ? 'Token obtenu avec succès' : 'Pas de token'
             };
-            console.log("✅ Auth test réussi");
+            logger.info("✅ Auth test réussi");
         } catch (error) {
-            console.error("❌ Auth test échoué:", error);
+            logger.error("❌ Auth test échoué:", error);
             authTest = {
                 success: false,
                 error: error.message,
@@ -79,21 +80,21 @@ async function testConnection(request, context) {
 
         const statusCode = isConnected ? 200 : 503;
 
-        console.log("🏁 REPONSE FINALE:");
-        console.log("- statusCode:", statusCode);
-        console.log("- response.success:", response.success);
-        console.log("- response.message:", response.message);
+        logger.info("🏁 REPONSE FINALE:");
+        logger.info("- statusCode:", statusCode);
+        logger.info("- response.success:", response.success);
+        logger.info("- response.message:", response.message);
 
         context.log(`Test de connectivité terminé: ${isConnected ? 'SUCCÈS' : 'ÉCHEC'}`);
         if (!isConnected) {
             context.log("⚠️ Détail de l'échec :", testDetails);
         }
 
-        console.log("📤 Envoi de la réponse...");
+        logger.info("📤 Envoi de la réponse...");
         return createResponse(statusCode, response);
 
     } catch (error) {
-        console.error('❌ ERREUR GENERALE dans testConnection:', error);
+        logger.error('❌ ERREUR GENERALE dans testConnection:', error);
         context.log.error('Erreur lors du test de connectivité (exception générale):', error);
 
         return createErrorResponse(500, 'Erreur lors du test de connectivité', {
