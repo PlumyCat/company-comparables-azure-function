@@ -32,7 +32,7 @@ describe('helpers utility functions', () => {
     expect(formatCurrency(1000)).toMatch('1 000');
   });
 
-  test('formatNumber formats number with spaces', () => {
+  test('formatNumber adds spacing for large values', () => {
     expect(formatNumber(1000000)).toBe('1 000 000');
   });
 
