@@ -44,10 +44,14 @@ company-comparables-azure-function/
    ```bash
    npm install
    ```
-2. Copy `.env.example` to `.env` or create `local.settings.json` and provide the required variables:
+2. Check code style with ESLint:
+   ```bash
+   npm run lint
+   ```
+3. Copy `.env.example` to `.env` or create `local.settings.json` and provide the required variables:
    - `SEARXNG_URL` – URL of your SearXNG instance
    - `CLIENT_ID`, `CLIENT_SECRET`, `TENANT_ID`, `TOKEN_URL` – Azure AD credentials
-3. Start the functions host:
+4. Start the functions host:
    ```bash
    npm run dev
    ```
