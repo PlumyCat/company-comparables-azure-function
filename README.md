@@ -40,19 +40,25 @@ company-comparables-azure-function/
 
 ## Local Development
 
-1. Install dependencies:
+1. Clone the repository and install dependencies:
    ```bash
+   git clone https://github.com/your-org/company-comparables-azure-function.git
+   cd company-comparables-azure-function
    npm install
    ```
 2. Check code style with ESLint:
    ```bash
    npm run lint
    ```
-3. Copy `.env.example` to `.env` or create `local.settings.json` and provide the required variables:
+3. Run the test suite:
+   ```bash
+   npm test
+   ```
+4. Copy `.env.example` to `.env` or create `local.settings.json` and provide the required variables:
     - `SEARXNG_URL` – URL of your SearXNG instance
     - `CLIENT_ID`, `CLIENT_SECRET`, `TENANT_ID`, `TOKEN_URL` – Azure AD credentials
     - `CACHE_TIMEOUT` – cache duration for web search results in milliseconds (default 300000)
-4. Start the functions host:
+5. Start the functions host:
    ```bash
    npm run dev
    ```
@@ -115,3 +121,14 @@ Remember to configure the same environment variables in the Azure portal.
 ## License
 
 This project is licensed under the MIT License.
+
+## Contributing
+
+We welcome contributions via GitHub pull requests. Fork the repository,
+create a feature branch and submit your changes as a PR.
+Before opening a PR please run:
+```bash
+npm run lint
+npm test
+```
+to ensure the codebase remains consistent.
