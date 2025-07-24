@@ -6,13 +6,13 @@ const searchService = new SearchService();
 const analysisService = new AnalysisService();
 
 async function findComparables(request, context) {
-    context.log('Début de findComparables');
+    context.log('Start of findComparables');
     const startTime = Date.now();
 
     try {
         const body = await request.json();
 
-        // VALIDATION SIMPLIFIÉE - juste le nom de l'entreprise
+        // SIMPLE VALIDATION - only the company name
         const validation = validateInput(body, {
             companyName: { required: true, type: 'string', minLength: 2, maxLength: 100 }
         });
@@ -23,19 +23,19 @@ async function findComparables(request, context) {
 
         const { 
             companyName, 
-            maxResults = 10,           // Optionnel avec défaut
-            minSimilarity = 50,        // Optionnel avec défaut
-            preferSameCountry = true   // Optionnel avec défaut
+            maxResults = 10,           // Optional with default
+            minSimilarity = 50,        // Optional with default
+            preferSameCountry = true   // Optional with default
         } = body;
 
         context.log(`Recherche de comparables pour: ${companyName}`);
 
-        // Validation de sécurité
+        // Security validation
         if (containsSuspiciousContent(companyName)) {
             return createErrorResponse(400, "Nom d'entreprise non autorisé");
         }
 
-        // ÉTAPE 1: Analyser l'entreprise de référence avec SearchService
+        // STEP 1: Analyze the reference company with SearchService
         console.log("🔍 Analyse de l'entreprise de référence...");
         const referenceSearchResults = await searchService.searchCompanyInfo(companyName, {
             language: 'fr',
@@ -49,7 +49,7 @@ async function findComparables(request, context) {
             });
         }
 
-        // Créer le profil de référence
+        // Create the reference profile
         const referenceProfile = createProfileFromSearch(companyName, referenceSearchResults);
         console.log("📋 Profil de référence:", {
             name: referenceProfile.name,
@@ -58,11 +58,11 @@ async function findComparables(request, context) {
             size: referenceProfile.size_category
         });
 
-        // ÉTAPE 2: Générer automatiquement les requêtes de recherche pour les comparables
+        // STEP 2: Automatically generate search queries for comparables
         const searchQueries = generateComparableSearchQueries(referenceProfile, preferSameCountry);
         console.log(`🔎 Génération de ${searchQueries.length} requêtes de recherche automatiques`);
 
-        // ÉTAPE 3: Rechercher les entreprises comparables
+        // STEP 3: Search for comparable companies
         const allComparables = [];
         
         for (const query of searchQueries) {
@@ -75,7 +75,7 @@ async function findComparables(request, context) {
                 }, query.focusMode);
 
                 if (searchResults.success && searchResults.results) {
-                    // Extraire les entreprises des résultats
+                    // Extract companies from the results
                     const foundCompanies = extractCompaniesFromResults(searchResults.results, referenceProfile);
                     allComparables.push(...foundCompanies);
                 }
@@ -181,7 +181,7 @@ async function findComparables(request, context) {
 // FONCTIONS UTILITAIRES
 
 function createProfileFromSearch(companyName, searchResults) {
-    // Réutiliser la logique de createBasicProfileFromSearch de searchCompany.js
+    // Reuse the logic from createBasicProfileFromSearch in searchCompany.js
     const allResults = [];
     searchResults.searchResults.forEach(sr => {
         allResults.push(...sr.results);
@@ -300,12 +300,12 @@ function extractCompaniesFromResults(searchResults, referenceProfile) {
 function isValidCompanyName(name, referenceName) {
     // Filtrer les noms invalides
     if (!name || name.length < 3 || name.length > 100) return false;
-    if (name.toLowerCase() === referenceName.toLowerCase()) return false; // Exclure l'entreprise de référence
+    if (name.toLowerCase() === referenceName.toLowerCase()) return false; // Exclude the reference company
     
     const invalidPatterns = [
         /^(the|a|an|le|la|les|un|une|des)\s/i,
         /^(page|article|news|info|site)\s/i,
-        /\d{4}/, // Années
+        /\d{4}/, // Years
         /^(january|february|march|april|may|june|july|august|september|october|november|december)/i
     ];
     
@@ -331,7 +331,7 @@ function calculateSimilarityScore(reference, comparable) {
     let score = 0;
     let factors = 0;
 
-    // Secteur (40% du score)
+    // Sector (40% of the score)
     if (reference.sector && comparable.sector) {
         if (reference.sector.toLowerCase() === comparable.sector.toLowerCase()) {
             score += 40;
@@ -341,7 +341,7 @@ function calculateSimilarityScore(reference, comparable) {
         factors++;
     }
 
-    // Pays (30% du score)
+    // Country (30% of the score)
     if (reference.country && comparable.country) {
         if (reference.country === comparable.country) {
             score += 30;
@@ -351,7 +351,7 @@ function calculateSimilarityScore(reference, comparable) {
         factors++;
     }
 
-    // Taille (20% du score)
+    // Size (20% of the score)
     if (reference.size_category && comparable.size_category) {
         if (reference.size_category === comparable.size_category) {
             score += 20;
@@ -361,10 +361,10 @@ function calculateSimilarityScore(reference, comparable) {
         factors++;
     }
 
-    // Confiance (10% du score)
+    // Confidence (10% of the score)
     score += (comparable.confidence || 0.5) * 10;
 
-    // Si peu de facteurs de comparaison, score par défaut
+    // If few comparison factors, default score
     if (factors < 2) {
         return Math.max(score, 40);
     }
@@ -486,7 +486,7 @@ function containsSuspiciousContent(text) {
     return suspiciousTerms.some(term => text.toLowerCase().includes(term));
 }
 
-// Réutiliser les fonctions d'extraction du code précédent
+// Reuse extraction functions from the previous code
 function extractSector(content) {
     const sectorPatterns = {
         'Technology': ['technology', 'tech', 'it services', 'software', 'digital', 'consulting'],
@@ -549,7 +549,7 @@ function guessSizeCategory(content) {
 }
 
 function extractEmployeeCount(content) {
-    // Réutiliser la fonction améliorée du code précédent
+    // Reuse the improved function from previous code
     const patterns = [
         /(\d{1,3}(?:,\d{3})*)\s*(?:employees|employés|people|staff)/gi,
         /(\d{1,3})k?\s*(?:employees|employés|people|staff)/gi
@@ -571,7 +571,7 @@ function extractEmployeeCount(content) {
 }
 
 function extractRevenue(content) {
-    // Réutiliser la fonction améliorée du code précédent
+    // Reuse the improved function from previous code
     const patterns = [
         /revenue.*?€(\d{1,3}(?:,\d{3})*)\s*(?:million|billion)/gi,
         /€(\d{1,3}(?:,\d{3})*)\s*(?:million|billion)/gi

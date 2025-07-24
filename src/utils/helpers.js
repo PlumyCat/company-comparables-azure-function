@@ -1,26 +1,28 @@
-/**\n * Utilitaires pour les Azure Functions\n */
 /**
- *  * Valide les paramètres d'entrée selon un schéma
- *  * @param {Object} data - Données à valider
- *  * @param {Object} schema - Schéma de validation
- *  * @returns {Object} - Résultat de validation
+ * Utilities for Azure Functions
+ */
+/**
+ *  * Validate input parameters according to a schema
+ *  * @param {Object} data - Data to validate
+ *  * @param {Object} schema - Validation schema
+ *  * @returns {Object} - Validation result
  *  */
 function validateInput(data, schema) {
     const errors = [];
 
     function validateField(value, fieldSchema, fieldName) {
-        // Vérifier si le champ est requis
+        // Check if the field is required
         if (fieldSchema.required && (value === undefined || value === null)) {
             errors.push(`Le champ '${fieldName}' est requis`);
             return;
         }
 
-        // Si la valeur est undefined/null et pas requis, passer
+        // If the value is undefined/null and not required, skip
         if (value === undefined || value === null) {
             return;
         }
 
-        // Vérifier le type
+        // Check the type
         if (fieldSchema.type) {
             const actualType = Array.isArray(value) ? 'array' : typeof value;
             if (actualType !== fieldSchema.type) {
@@ -29,7 +31,7 @@ function validateInput(data, schema) {
             }
         }
 
-        // Validations spécifiques par type
+        // Specific validations per type
         if (fieldSchema.type === 'string') {
             if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
                 errors.push(`Le champ '${fieldName}' doit contenir au moins ${fieldSchema.minLength} caractères`);
@@ -57,7 +59,7 @@ function validateInput(data, schema) {
             }
         }
 
-        // Validation des champs d'objet
+        // Validate object fields
         if (fieldSchema.type === 'object' && fieldSchema.fields) {
             for (const [subFieldName, subFieldSchema] of Object.entries(fieldSchema.fields)) {
                 validateField(value[subFieldName], subFieldSchema, `${fieldName}.${subFieldName}`);
@@ -65,7 +67,7 @@ function validateInput(data, schema) {
         }
     }
 
-    // Valider chaque champ du schéma
+    // Validate each field of the schema
     for (const [fieldName, fieldSchema] of Object.entries(schema)) {
         validateField(data[fieldName], fieldSchema, fieldName);
     }
@@ -175,10 +177,10 @@ async function measureExecutionTime(operation) {
 }
 
 /**
- * Nettoie et sanitise une chaîne de caractères
- * @param {string} input - Chaîne d'entrée
- * @param {Object} options - Options de nettoyage
- * @returns {string} - Chaîne nettoyée
+ * Clean and sanitize a string
+ * @param {string} input - Input string
+ * @param {Object} options - Cleaning options
+ * @returns {string} - Cleaned string
  */
 function sanitizeString(input, options = {}) {
     if (!input || typeof input !== 'string') {
@@ -187,18 +189,18 @@ function sanitizeString(input, options = {}) {
 
     let cleaned = input.trim();
 
-    // Supprimer les caractères de contrôle
+    // Remove control characters
     if (options.removeControlChars !== false) {
         cleaned = cleaned.replace(/[\r\n]+/g, ' ');
         cleaned = cleaned.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
     }
 
-    // Limiter la longueur
+    // Limit the length
     if (options.maxLength) {
         cleaned = cleaned.substring(0, options.maxLength);
     }
 
-    // Supprimer les espaces multiples
+    // Remove multiple spaces
     if (options.normalizeSpaces !== false) {
         cleaned = cleaned.replace(/\s+/g, ' ');
     }
@@ -207,10 +209,10 @@ function sanitizeString(input, options = {}) {
 }
 
 /**
- * Formate un montant en euros
- * @param {number} amount - Montant
- * @param {Object} options - Options de formatage
- * @returns {string} - Montant formaté
+ * Format an amount in euros
+ * @param {number} amount - Amount
+ * @param {Object} options - Formatting options
+ * @returns {string} - Formatted amount
  */
 function formatCurrency(amount, options = {}) {
     if (!amount || typeof amount !== 'number') {
@@ -228,9 +230,9 @@ function formatCurrency(amount, options = {}) {
 }
 
 /**
- * Formate un nombre avec des séparateurs de milliers
- * @param {number} number - Nombre
- * @returns {string} - Nombre formaté
+ * Format a number with thousand separators
+ * @param {number} number - Number
+ * @returns {string} - Formatted number
  */
 function formatNumber(number) {
     if (!number || typeof number !== 'number') {
@@ -241,17 +243,17 @@ function formatNumber(number) {
 }
 
 /**
- * Génère un identifiant unique
- * @returns {string} - Identifiant unique
+ * Generate a unique identifier
+ * @returns {string} - Unique identifier
  */
 function generateId() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
 /**
- * Vérifie si une URL est valide
- * @param {string} url - URL à vérifier
- * @returns {boolean} - True si valide
+ * Check if a URL is valid
+ * @param {string} url - URL to check
+ * @returns {boolean} - True if valid
  */
 function isValidUrl(url) {
     try {
@@ -263,8 +265,8 @@ function isValidUrl(url) {
 }
 
 /**
- * Retourne une réponse CORS pour les requêtes OPTIONS
- * @returns {Object} - Réponse CORS
+ * Return a CORS response for OPTIONS requests
+ * @returns {Object} - CORS response
  */
 function createCorsResponse() {
     return {
@@ -280,9 +282,9 @@ function createCorsResponse() {
 }
 
 /**
- * Calcule un hash simple pour une chaîne
- * @param {string} str - Chaîne à hasher
- * @returns {string} - Hash
+ * Compute a simple hash for a string
+ * @param {string} str - String to hash
+ * @returns {string} - Hash value
  */
 function simpleHash(str) {
     let hash = 0;
@@ -298,11 +300,11 @@ function simpleHash(str) {
 }
 
 /**
- * Retry une opération avec backoff exponentiel
- * @param {Function} operation - Opération à retry
- * @param {number} maxRetries - Nombre max de tentatives
- * @param {number} baseDelay - Délai de base en ms
- * @returns {*} - Résultat de l'opération
+ * Retry an operation with exponential backoff
+ * @param {Function} operation - Operation to retry
+ * @param {number} maxRetries - Maximum number of attempts
+ * @param {number} baseDelay - Base delay in ms
+ * @returns {*} - Operation result
  */
 async function retryWithBackoff(operation, maxRetries = 3, baseDelay = 1000) {
     let lastError;
@@ -317,7 +319,7 @@ async function retryWithBackoff(operation, maxRetries = 3, baseDelay = 1000) {
                 throw lastError;
             }
 
-            // Attendre avec backoff exponentiel
+            // Wait with exponential backoff
             const delay = baseDelay * Math.pow(2, attempt);
             await new Promise(resolve => setTimeout(resolve, delay));
         }

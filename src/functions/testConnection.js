@@ -12,7 +12,7 @@ async function testConnection(request, context) {
     try {
         console.log("🎯 DEBUT DU TEST DE CONNEXION");
         
-        // Test de connectivité avec logs détaillés
+        // Connectivity test with detailed logs
         try {
             console.log("📞 Appel de searchService.testConnection()...");
             isConnected = await searchService.testConnection();
@@ -31,11 +31,11 @@ async function testConnection(request, context) {
         console.log("- connectionError:", connectionError);
         console.log("- testDetails:", testDetails);
 
-        // Récupérer les statistiques détaillées
+        // Retrieve detailed statistics
         const stats = searchService.getServiceStats();
         console.log("📈 Stats du service:", stats);
 
-        // Test d'authentification Azure AD séparé
+        // Separate Azure AD authentication test
         let authTest = {
             success: false,
             error: null,

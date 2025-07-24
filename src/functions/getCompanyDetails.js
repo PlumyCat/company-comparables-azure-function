@@ -6,15 +6,15 @@ const searchService = new SearchService();
 const analysisService = new AnalysisService();
 
 async function getCompanyDetails(request, context) {
-    context.log('Début de getCompanyDetails');
+    context.log('Start of getCompanyDetails');
     const startTime = Date.now();
 
     try {
         const body = await request.json();
 
-        // Validation des paramètres d'entrée - accepter soit symbol soit name
+        // Validate input parameters - accept either symbol or name
         const validation = validateInput(body, {
-            // Soit symbol soit name doit être fourni
+            // Either symbol or name must be provided
         });
 
         const { symbol, name } = body;
@@ -29,15 +29,15 @@ async function getCompanyDetails(request, context) {
         const companyIdentifier = symbol || name;
         context.log(`Recherche de détails pour: ${companyIdentifier}`);
 
-        // Validation de sécurité
+        // Security validation
         if (!isValidIdentifier(companyIdentifier)) {
             return createErrorResponse(400, 'Identifiant invalide');
         }
 
-        // UTILISER LE SEARCHSERVICE QUI FONCTIONNE
+        // USE THE WORKING SEARCHSERVICE
         console.log("🔍 Recherche via SearchService...");
         const searchResults = await searchService.searchCompanyInfo(companyIdentifier, {
-            language: symbol ? 'en' : 'fr', // Anglais pour les symboles, français pour les noms
+            language: symbol ? 'en' : 'fr', // English for symbols, French for names
             page: 1
         });
 
@@ -49,7 +49,7 @@ async function getCompanyDetails(request, context) {
             });
         }
 
-        // Créer un profil détaillé à partir des résultats
+        // Create a detailed profile from the results
         console.log("🧠 Analyse des résultats...");
         const companyProfile = createDetailedProfileFromSearch(companyIdentifier, searchResults, !!symbol);
 
@@ -60,7 +60,7 @@ async function getCompanyDetails(request, context) {
             });
         }
 
-        // Enrichir avec des données financières si c'est un symbole
+        // Enrich with financial data if it's a symbol
         if (symbol) {
             companyProfile.symbol = symbol.toUpperCase();
             companyProfile.isPublic = true;
@@ -123,7 +123,7 @@ function createDetailedProfileFromSearch(identifier, searchResults, isSymbol) {
 
     const allContent = allResults.map(r => `${r.title} ${r.content}`).join(' ').toLowerCase();
 
-    // Extraction avancée pour les détails
+    // Advanced extraction for details
     const profile = {
         name: extractCompanyName(allContent, identifier) || identifier,
         source: 'web_search_detailed',
@@ -150,13 +150,13 @@ function createDetailedProfileFromSearch(identifier, searchResults, isSymbol) {
         description: createDescriptionAdvanced(allResults),
         website: extractWebsiteAdvanced(allResults),
         keyPoints: extractKeyPointsAdvanced(allResults),
-        // Détails supplémentaires
+        // Additional details
         subsidiaries: extractSubsidiaries(allContent),
         certifications: extractCertifications(allContent),
         partnerships: extractPartnerships(allContent)
     };
 
-    // Calculer les catégories
+    // Compute categories
     if (profile.employees) {
         profile.employeeCategory = categorizeEmployees(profile.employees);
     }
@@ -167,9 +167,9 @@ function createDetailedProfileFromSearch(identifier, searchResults, isSymbol) {
     return profile;
 }
 
-// Fonctions d'extraction avancées (utilise les fonctions améliorées du code précédent)
+// Advanced extraction functions (using improved functions from previous code)
 function extractCompanyName(content, fallback) {
-    // Chercher le nom officiel dans les patterns
+    // Search for the official name in patterns
     const patterns = [
         /([A-Z][a-zA-Z\s&]+)(?:\s+SE|\s+SA|\s+Inc|\s+Corp|\s+Ltd|\s+LLC)/g,
         /company.*?([A-Z][a-zA-Z\s&]+)/gi
@@ -186,7 +186,7 @@ function extractCompanyName(content, fallback) {
 }
 
 function extractSectorAdvanced(content) {
-    // Logique améliorée avec plus de secteurs
+    // Enhanced logic with more sectors
     const sectorPatterns = {
         'Technology': ['technology', 'tech', 'it services', 'software', 'digital', 'consulting', 'transformation', 'innovation'],
         'Finance': ['finance', 'financial', 'bank', 'investment', 'insurance', 'asset management'],
@@ -212,9 +212,9 @@ function extractSectorAdvanced(content) {
     return bestMatch || 'Technology';
 }
 
-// Ajouter les autres fonctions d'extraction avancées...
+// Add the other advanced extraction functions...
 function extractIndustryAdvanced(content) {
-    // Plus de détails que extractIndustry de base
+    // More detailed than the basic extractIndustry
     const industries = {
         'IT Consulting': ['it consulting', 'technology consulting', 'digital consulting', 'systems integration'],
         'Software Development': ['software development', 'application development', 'custom software'],
@@ -232,28 +232,28 @@ function extractIndustryAdvanced(content) {
     return null;
 }
 
-// Utiliser les fonctions améliorées du code précédent pour les autres extractions
+// Use the improved functions from the previous code for the remaining extractions
 function extractEmployeeCountAdvanced(content) {
-    return extractEmployeeCount(content); // Utilise la fonction améliorée
+    return extractEmployeeCount(content); // Uses the improved function
 }
 
 function extractRevenueAdvanced(content) {
-    return extractRevenue(content); // Utilise la fonction améliorée
+    return extractRevenue(content); // Uses the improved function
 }
 
 function extractFoundingYearAdvanced(content) {
-    return extractFoundingYear(content); // Utilise la fonction améliorée
+    return extractFoundingYear(content); // Uses the improved function
 }
 
 function extractHeadquartersAdvanced(content) {
-    return extractHeadquarters(content); // Utilise la fonction améliorée
+    return extractHeadquarters(content); // Uses the improved function
 }
 
 function extractLeadershipAdvanced(content) {
-    return extractLeadership(content); // Utilise la fonction améliorée
+    return extractLeadership(content); // Uses the improved function
 }
 
-// Nouvelles extractions pour les détails supplémentaires
+// New extractions for additional details
 function extractSubsidiaries(content) {
     const subsidiaries = [];
     const patterns = [
@@ -261,8 +261,8 @@ function extractSubsidiaries(content) {
         /owns.*?([A-Z][a-zA-Z\s&]+)/gi
     ];
     
-    // Logique d'extraction des filiales
-    return subsidiaries.slice(0, 3); // Limiter à 3
+    // Subsidiaries extraction logic
+    return subsidiaries.slice(0, 3); // Limit to 3
 }
 
 function extractCertifications(content) {
@@ -320,7 +320,7 @@ function generateQualityIndicators(profile) {
     return indicators;
 }
 
-// Réutiliser les autres fonctions du code précédent...
+// Reuse other functions from the previous code...
 function categorizeEmployees(count) {
     if (count < 50) return 'small';
     if (count < 1000) return 'medium';
