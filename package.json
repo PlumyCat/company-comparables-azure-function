@@ -5,13 +5,16 @@
   "scripts": {
     "start": "func start",
     "dev": "func start --verbose",
-    "test": "echo \"Utilisez test.http avec l'extension REST Client de VS Code\"",
+    "test": "jest",
     "deploy": "func azure functionapp publish",
     "lint": "echo \"Pas de linter configuré\""
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",
     "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "jest": "^29.6.0"
   },
   "main": "src/{index.js,functions/*.js}",
   "engines": {
