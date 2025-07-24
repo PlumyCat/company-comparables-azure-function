@@ -149,4 +149,4 @@ function generateRecommendations(isConnected, authTest, stats, testDetails) {
     return recommendations;
 }
 
-module.exports = { testConnection };
+module.exports = { testConnection, generateRecommendations };
