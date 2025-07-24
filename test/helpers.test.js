@@ -22,6 +22,13 @@ describe('helpers utility functions', () => {
   });
 
   test('formatCurrency formats euros', () => {
+    // Narrow non-breaking spaces are used as thousand separators
+    // and a non-breaking space precedes the euro sign
+    expect(formatCurrency(1000)).toBe('1\u202F000\u00A0€');
+  });
+
+  test('formatNumber formats number with spaces', () => {
+    expect(formatNumber(1000000)).toBe('1\u202F000\u202F000');
     expect(formatCurrency(1000)).toMatch('1 000');
   });
 
