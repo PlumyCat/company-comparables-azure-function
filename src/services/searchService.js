@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const logger = require('../utils/logger');
 
 class SearchService {
     constructor() {
@@ -146,8 +147,8 @@ class SearchService {
             });
             const searchUrl = `${baseUrl}/search?${urlParams}`;
 
-            console.log("🔎 Appel SearXNG");
-            console.log("URL :", searchUrl);
+            logger.info("🔎 Appel SearXNG");
+            logger.info("URL :", searchUrl);
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -164,18 +165,18 @@ class SearchService {
                 });
 
                 clearTimeout(timeoutId);
-                console.log("📡 Appel fetch terminé");
-                console.log("Status HTTP :", response.status);
+                logger.info("📡 Appel fetch terminé");
+                logger.info("Status HTTP :", response.status);
 
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Erreur de recherche SearXNG: ${response.status} ${response.statusText} - ${errorText}`);
                 }
 
-                console.log("🔍 Début lecture du body...");
+                logger.info("🔍 Début lecture du body...");
                 const text = await response.text();
-                console.log("✅ Body lu complètement");
-                console.log("📏 Taille totale:", text.length);
+                logger.info("✅ Body lu complètement");
+                logger.info("📏 Taille totale:", text.length);
 
                 let data;
                 try {
@@ -185,14 +186,14 @@ class SearchService {
                     }
 
                     data = JSON.parse(trimmedText);
-                    console.log("✅ JSON parsé avec succès");
-                    console.log("📊 Nombre de résultats:", data.results?.length || 0);
+                    logger.info("✅ JSON parsé avec succès");
+                    logger.info("📊 Nombre de résultats:", data.results?.length || 0);
                     
                 } catch (parseError) {
-                    console.error("❌ Erreur parsing JSON:", parseError.message);
+                    logger.error("❌ Erreur parsing JSON:", parseError.message);
                     
                     if (text.includes('"results":') && !text.trim().endsWith('}')) {
-                        console.log("🔧 Tentative de réparation JSON tronqué...");
+                        logger.info("🔧 Tentative de réparation JSON tronqué...");
                         try {
                             let fixedJson = text.trim();
                             if (!fixedJson.endsWith('}')) {
@@ -206,7 +207,7 @@ class SearchService {
                             }
                             
                             data = JSON.parse(fixedJson);
-                            console.log("✅ JSON réparé avec succès !");
+                            logger.info("✅ JSON réparé avec succès !");
                         } catch (repairError) {
                             throw new Error(`Réponse JSON tronquée et non réparable: ${parseError.message}`);
                         }
@@ -227,8 +228,8 @@ class SearchService {
                 });
 
                 this.stats.successfulRequests++;
-                console.log("🎯 AVANT RETURN - formattedResults:", !!formattedResults);
-                console.log("🎯 AVANT RETURN - success:", formattedResults?.success);
+                logger.info("🎯 AVANT RETURN - formattedResults:", !!formattedResults);
+                logger.info("🎯 AVANT RETURN - success:", formattedResults?.success);
                 return formattedResults;
 
             } catch (fetchError) {
@@ -430,14 +431,14 @@ class SearchService {
     }
 
     formatSearchResults(rawData, originalQuery) {
-        console.log("🏗️ DEBUT formatSearchResults");
-        console.log("- originalQuery:", originalQuery);
-        console.log("- rawData keys:", Object.keys(rawData));
+        logger.info("🏗️ DEBUT formatSearchResults");
+        logger.info("- originalQuery:", originalQuery);
+        logger.info("- rawData keys:", Object.keys(rawData));
         
         const results = rawData.results || [];
-        console.log("- results.length:", results.length);
+        logger.info("- results.length:", results.length);
 
-        console.log("🔄 Mapping des résultats...");
+        logger.info("🔄 Mapping des résultats...");
         const mappedResults = results.map(result => ({
             title: result.title || 'Sans titre',
             url: result.url,
@@ -447,9 +448,9 @@ class SearchService {
             publishedDate: result.publishedDate || null,
             category: result.category || 'general'
         }));
-        console.log("✅ Mapping terminé, nombre mappé:", mappedResults.length);
+        logger.info("✅ Mapping terminé, nombre mappé:", mappedResults.length);
 
-        console.log("🏗️ Construction objet final...");
+        logger.info("🏗️ Construction objet final...");
         const finalResult = {
             query: originalQuery,
             totalResults: results.length,
@@ -463,33 +464,33 @@ class SearchService {
             }
         };
         
-        console.log("✅ FIN formatSearchResults, success:", finalResult.success);
+        logger.info("✅ FIN formatSearchResults, success:", finalResult.success);
         return finalResult;
     }
     async testConnection() {
         try {
-            console.log("🧪 Début du test de connexion");
+            logger.info("🧪 Début du test de connexion");
             
             if (this.configurationError) {
-                console.log("❌ Erreur de configuration:", this.configurationError);
+                logger.info("❌ Erreur de configuration:", this.configurationError);
                 return false;
             }
             
             const token = await this.getAccessToken();
             if (!token) {
-                console.log("❌ Impossible d'obtenir le token");
+                logger.info("❌ Impossible d'obtenir le token");
                 return false;
             }
-            console.log("✅ Token obtenu");
+            logger.info("✅ Token obtenu");
             
-            console.log("🔍 Test de recherche simple...");
+            logger.info("🔍 Test de recherche simple...");
             const testResult = await this.searchWeb('test', {
                 categories: 'general',
                 page: 1,
                 engines: 'duckduckgo'
             });
             
-            console.log("🧪 Résultat du test:", {
+            logger.info("🧪 Résultat du test:", {
                 success: testResult.success,
                 totalResults: testResult.totalResults || 0,
                 hasResults: testResult.results && testResult.results.length > 0
@@ -498,7 +499,7 @@ class SearchService {
             return testResult.success === true;
             
         } catch (error) {
-            console.error("❌ Erreur dans testConnection:", error.message);
+            logger.error("❌ Erreur dans testConnection:", error.message);
             return false;
         }
     }

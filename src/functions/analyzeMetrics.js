@@ -1,5 +1,6 @@
 const { SearchService } = require('../services/searchService');
 const { validateInput, createResponse, createErrorResponse } = require('../utils/helpers');
+const logger = require('../utils/logger');
 
 const searchService = new SearchService();
 
@@ -33,7 +34,7 @@ async function analyzeMetrics(request, context) {
         }
 
         // STEP 1: Analyze the main company
-        console.log("🔍 Analyse de l'entreprise principale...");
+        logger.info("🔍 Analyse de l'entreprise principale...");
         const mainCompanyResults = await searchService.searchCompanyInfo(companyName, {
             language: 'fr',
             page: 1
@@ -48,7 +49,7 @@ async function analyzeMetrics(request, context) {
 
         // Create the main profile with metrics
         const mainProfile = createDetailedProfileWithMetrics(companyName, mainCompanyResults);
-        console.log("📊 Profil principal créé:", {
+        logger.info("📊 Profil principal créé:", {
             name: mainProfile.name,
             sector: mainProfile.sector,
             employees: mainProfile.employees,
@@ -58,9 +59,9 @@ async function analyzeMetrics(request, context) {
         // STEP 2: Automatically find comparables if requested
         let comparables = [];
         if (includeComparables && maxComparables > 0) {
-            console.log(`🔎 Recherche automatique de ${maxComparables} comparables...`);
+            logger.info(`🔎 Recherche automatique de ${maxComparables} comparables...`);
             comparables = await findComparablesAutomatically(mainProfile, maxComparables);
-            console.log(`📋 ${comparables.length} comparables trouvés`);
+            logger.info(`📋 ${comparables.length} comparables trouvés`);
         }
 
         // STEP 3: Calculate metrics for all companies
@@ -205,7 +206,7 @@ async function findComparablesAutomatically(mainProfile, maxResults) {
                 comparables.push(...foundCompanies);
             }
         } catch (error) {
-            console.log(`⚠️ Erreur recherche comparable "${query}":`, error.message);
+            logger.info(`⚠️ Erreur recherche comparable "${query}":`, error.message);
         }
     }
 

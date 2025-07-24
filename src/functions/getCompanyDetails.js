@@ -1,6 +1,7 @@
 const { SearchService } = require('../services/searchService');
 const { AnalysisService } = require('../services/analysisService');
 const { validateInput, createResponse, createErrorResponse } = require('../utils/helpers');
+const logger = require('../utils/logger');
 
 const searchService = new SearchService();
 const analysisService = new AnalysisService();
@@ -35,7 +36,7 @@ async function getCompanyDetails(request, context) {
         }
 
         // USE THE WORKING SEARCHSERVICE
-        console.log("🔍 Recherche via SearchService...");
+        logger.info("🔍 Recherche via SearchService...");
         const searchResults = await searchService.searchCompanyInfo(companyIdentifier, {
             language: symbol ? 'en' : 'fr', // English for symbols, French for names
             page: 1
@@ -50,7 +51,7 @@ async function getCompanyDetails(request, context) {
         }
 
         // Create a detailed profile from the results
-        console.log("🧠 Analyse des résultats...");
+        logger.info("🧠 Analyse des résultats...");
         const companyProfile = createDetailedProfileFromSearch(companyIdentifier, searchResults, !!symbol);
 
         if (!companyProfile || companyProfile.confidence < 0.1) {
@@ -114,7 +115,7 @@ async function getCompanyDetails(request, context) {
 }
 
 function createDetailedProfileFromSearch(identifier, searchResults, isSymbol) {
-    console.log("🏗️ Création profil détaillé");
+    logger.info("🏗️ Création profil détaillé");
     
     const allResults = [];
     searchResults.searchResults.forEach(sr => {
