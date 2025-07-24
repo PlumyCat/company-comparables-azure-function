@@ -189,7 +189,8 @@ function sanitizeString(input, options = {}) {
 
     // Supprimer les caractères de contrôle
     if (options.removeControlChars !== false) {
-        cleaned = cleaned.replace(/[\\x00-\\x1F\\x7F]/g, '');
+        cleaned = cleaned.replace(/[\r\n]+/g, ' ');
+        cleaned = cleaned.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
     }
 
     // Limiter la longueur
@@ -199,7 +200,7 @@ function sanitizeString(input, options = {}) {
 
     // Supprimer les espaces multiples
     if (options.normalizeSpaces !== false) {
-        cleaned = cleaned.replace(/\\s+/g, ' ');
+        cleaned = cleaned.replace(/\s+/g, ' ');
     }
 
     return cleaned;
@@ -223,7 +224,7 @@ function formatCurrency(amount, options = {}) {
         maximumFractionDigits: options.decimals || 0
     });
 
-    return formatter.format(amount);
+    return formatter.format(amount).replace(/\u202F/g, '\u00A0');
 }
 
 /**
@@ -236,7 +237,7 @@ function formatNumber(number) {
         return '0';
     }
 
-    return new Intl.NumberFormat('fr-FR').format(number);
+    return new Intl.NumberFormat('fr-FR').format(number).replace(/\u202F/g, '\u00A0');
 }
 
 /**
