@@ -1,0 +1,29 @@
+{
+  "name": "company-comparables-azure-function",
+  "version": "1.0.0",
+  "description": "Azure Functions pour l'analyse de sociétés comparables en utilisant SearXNG",
+  "scripts": {
+    "start": "func start",
+    "dev": "func start --verbose",
+    "test": "echo \"Utilisez test.http avec l'extension REST Client de VS Code\"",
+    "deploy": "func azure functionapp publish",
+    "lint": "echo \"Pas de linter configuré\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "node-fetch": "^2.7.0"
+  },
+  "main": "src/{index.js,functions/*.js}",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "azure-functions",
+    "company-analysis",
+    "financial-data",
+    "comparables",
+    "searxng"
+  ],
+  "author": "Company Comparables Team",
+  "license": "MIT"
+}
