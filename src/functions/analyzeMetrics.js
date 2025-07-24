@@ -950,7 +950,21 @@ function extractSector(content) {
 }
 
 function extractIndustry(content) {
-    // Implémentation basique
+    const industries = {
+        'IT Consulting': ['it consulting', 'technology consulting', 'digital consulting', 'systems integration'],
+        'Software Development': ['software development', 'application development', 'custom software'],
+        'Business Consulting': ['business consulting', 'strategy consulting', 'management consulting'],
+        'Outsourcing': ['outsourcing', 'managed services', 'bpo'],
+        'Cloud Services': ['cloud services', 'cloud computing', 'saas'],
+        'Data Analytics': ['data analytics', 'big data', 'business intelligence', 'data science']
+    };
+
+    const lower = content.toLowerCase();
+    for (const [industry, keywords] of Object.entries(industries)) {
+        if (keywords.some(k => lower.includes(k))) {
+            return industry;
+        }
+    }
     return null;
 }
 
