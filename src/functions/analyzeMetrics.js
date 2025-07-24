@@ -4,13 +4,13 @@ const { validateInput, createResponse, createErrorResponse } = require('../utils
 const searchService = new SearchService();
 
 async function analyzeMetrics(request, context) {
-    context.log('Début de analyzeMetrics');
+    context.log('Start of analyzeMetrics');
     const startTime = Date.now();
 
     try {
         const body = await request.json();
 
-        // VALIDATION SIMPLIFIÉE - juste le nom de l'entreprise
+        // SIMPLE VALIDATION - only the company name
         const validation = validateInput(body, {
             companyName: { required: true, type: 'string', minLength: 2, maxLength: 100 }
         });
@@ -21,18 +21,18 @@ async function analyzeMetrics(request, context) {
 
         const { 
             companyName,
-            includeComparables = true,  // Optionnel avec défaut
-            maxComparables = 5          // Optionnel avec défaut
+            includeComparables = true,  // Optional with default
+            maxComparables = 5          // Optional with default
         } = body;
 
         context.log(`Analyse de métriques pour: ${companyName}`);
 
-        // Validation de sécurité
+        // Security validation
         if (containsSuspiciousContent(companyName)) {
             return createErrorResponse(400, "Nom d'entreprise non autorisé");
         }
 
-        // ÉTAPE 1: Analyser l'entreprise principale
+        // STEP 1: Analyze the main company
         console.log("🔍 Analyse de l'entreprise principale...");
         const mainCompanyResults = await searchService.searchCompanyInfo(companyName, {
             language: 'fr',
@@ -46,7 +46,7 @@ async function analyzeMetrics(request, context) {
             });
         }
 
-        // Créer le profil principal avec métriques
+        // Create the main profile with metrics
         const mainProfile = createDetailedProfileWithMetrics(companyName, mainCompanyResults);
         console.log("📊 Profil principal créé:", {
             name: mainProfile.name,
@@ -55,7 +55,7 @@ async function analyzeMetrics(request, context) {
             revenue: mainProfile.revenue
         });
 
-        // ÉTAPE 2: Trouver automatiquement des comparables si demandé
+        // STEP 2: Automatically find comparables if requested
         let comparables = [];
         if (includeComparables && maxComparables > 0) {
             console.log(`🔎 Recherche automatique de ${maxComparables} comparables...`);
@@ -63,7 +63,7 @@ async function analyzeMetrics(request, context) {
             console.log(`📋 ${comparables.length} comparables trouvés`);
         }
 
-        // ÉTAPE 3: Calculer les métriques pour toutes les entreprises
+        // STEP 3: Calculate metrics for all companies
         const allCompanies = [mainProfile, ...comparables];
         const analyzedCompanies = allCompanies.map((company, index) => {
             const metrics = calculateAdvancedFinancialMetrics(company);
@@ -83,13 +83,13 @@ async function analyzeMetrics(request, context) {
             };
         });
 
-        // ÉTAPE 4: Analyse comparative
+        // STEP 4: Comparative analysis
         const comparativeAnalysis = performComparativeAnalysis(analyzedCompanies);
         
-        // ÉTAPE 5: Recommandations intelligentes
+        // STEP 5: Smart recommendations
         const smartRecommendations = generateSmartRecommendations(analyzedCompanies, comparativeAnalysis);
 
-        // ÉTAPE 6: Statistiques globales
+        // STEP 6: Overall statistics
         const analysisStats = {
             totalCompanies: analyzedCompanies.length,
             mainCompany: analyzedCompanies[0].name,
@@ -148,7 +148,7 @@ async function analyzeMetrics(request, context) {
     }
 }
 
-// FONCTIONS UTILITAIRES AVANCÉES
+// ADVANCED UTILITY FUNCTIONS
 
 function createDetailedProfileWithMetrics(companyName, searchResults) {
     const allResults = [];
@@ -183,7 +183,7 @@ function createDetailedProfileWithMetrics(companyName, searchResults) {
 async function findComparablesAutomatically(mainProfile, maxResults) {
     const comparables = [];
     
-    // Générer des requêtes de recherche ciblées
+    // Generate targeted search queries
     const searchQueries = [
         `concurrents ${mainProfile.sector || 'technology'} ${mainProfile.country || ''}`,
         `entreprises similaires ${mainProfile.sector || 'technology'}`,
@@ -209,7 +209,7 @@ async function findComparablesAutomatically(mainProfile, maxResults) {
         }
     }
 
-    // Déduplication et limitation
+    // Deduplication and limiting
     const uniqueComparables = deduplicateByName(comparables);
     return uniqueComparables.slice(0, maxResults);
 }
@@ -238,7 +238,7 @@ function extractCompaniesFromSearchResults(results, excludeName) {
                         url: result.url,
                         description: result.content.substring(0, 150) + '...',
                         extractedFrom: result.title,
-                        // Essayer d'extraire des infos basiques du contexte
+                        // Try to extract some basic information from the context
                         sector: extractSectorFromContext(content),
                         country: extractCountryFromContext(content)
                     });
@@ -252,35 +252,35 @@ function extractCompaniesFromSearchResults(results, excludeName) {
 
 function calculateAdvancedFinancialMetrics(company) {
     const metrics = {
-        // Métriques de base
+        // Basic metrics
         revenuePerEmployee: null,
         employeeProductivity: 'unknown',
         sizeCategory: company.size_category || 'unknown',
         
-        // Métriques avancées
+        // Advanced metrics
         growthStage: determineGrowthStage(company),
         marketPresence: assessMarketPresence(company),
         operationalEfficiency: 'unknown',
         scalabilityIndex: calculateScalabilityIndex(company),
         
-        // Indicateurs sectoriels
+        // Sector indicators
         sectorRank: 'unknown',
         competitivePosition: 'unknown',
         
-        // Scores calculés
+        // Computed scores
         overallHealthScore: 0,
         growthPotential: 0,
         stabilityScore: 0
     };
 
-    // Calculs basés sur les données disponibles
+    // Calculations based on available data
     if (company.revenue && company.employees && company.employees > 0) {
         const revenueStr = company.revenue.replace(/[€M]/g, '');
-        const revenueNum = parseInt(revenueStr) * 1000000; // Convertir en euros
+        const revenueNum = parseInt(revenueStr) * 1000000; // Convert to euros
         
         metrics.revenuePerEmployee = Math.round(revenueNum / company.employees);
         
-        // Classification de la productivité
+        // Productivity classification
         if (metrics.revenuePerEmployee > 300000) {
             metrics.employeeProductivity = 'very_high';
             metrics.overallHealthScore += 30;
@@ -296,7 +296,7 @@ function calculateAdvancedFinancialMetrics(company) {
         }
     }
 
-    // Score de croissance basé sur l'âge et la taille
+    // Growth score based on age and size
     if (company.founding_year) {
         const age = new Date().getFullYear() - company.founding_year;
         if (age < 10 && company.employees > 100) {
@@ -308,10 +308,10 @@ function calculateAdvancedFinancialMetrics(company) {
         }
     }
 
-    // Score de stabilité
+    // Stability score
     metrics.stabilityScore = calculateStabilityScore(company);
     
-    // Score de santé global
+    // Overall health score
     metrics.overallHealthScore = Math.min(
         metrics.overallHealthScore + metrics.growthPotential * 0.3 + metrics.stabilityScore * 0.4,
         100
@@ -325,7 +325,7 @@ function assessComprehensiveRiskProfile(company, metrics) {
     let riskScore = 0;
     let riskLevel = 'low';
 
-    // Risque lié à la taille
+    // Risk related to company size
     if (company.employees) {
         if (company.employees < 10) {
             risks.push('Très petite équipe - volatilité élevée');
@@ -336,13 +336,13 @@ function assessComprehensiveRiskProfile(company, metrics) {
         }
     }
 
-    // Risque lié à la productivité
+    // Risk related to productivity
     if (metrics.employeeProductivity === 'low') {
         risks.push('Productivité par employé faible');
         riskScore += 25;
     }
 
-    // Risque lié à l'âge de l'entreprise
+    // Risk related to company age
     if (company.founding_year) {
         const age = new Date().getFullYear() - company.founding_year;
         if (age < 3) {
@@ -354,19 +354,19 @@ function assessComprehensiveRiskProfile(company, metrics) {
         }
     }
 
-    // Risque lié aux données
+    // Data-related risk
     if (company.confidence < 0.6) {
         risks.push('Données de confiance limitée');
         riskScore += 20;
     }
 
-    // Risque sectoriel
+    // Sector risk
     const sectorRisks = {
-        'Technology': 15, // Volatilité moyenne
-        'Finance': 25,    // Régulation forte
-        'Healthcare': 20, // Cycles longs
-        'Energy': 30,     // Volatilité élevée
-        'Retail': 35      // Concurrence intense
+        'Technology': 15, // Average volatility
+        'Finance': 25,    // Heavy regulation
+        'Healthcare': 20, // Long cycles
+        'Energy': 30,     // High volatility
+        'Retail': 35      // Intense competition
     };
     
     if (company.sector && sectorRisks[company.sector]) {
@@ -374,7 +374,7 @@ function assessComprehensiveRiskProfile(company, metrics) {
         risks.push(`Risque sectoriel ${company.sector}`);
     }
 
-    // Classification du niveau de risque
+    // Risk level classification
     if (riskScore >= 70) {
         riskLevel = 'high';
     } else if (riskScore >= 40) {
@@ -406,7 +406,7 @@ function estimateDetailedValuation(company, metrics, referenceCompany) {
         adjustments: []
     };
 
-    // Multiples sectoriels avancés
+    // Advanced sector multiples
     const advancedSectorMultiples = {
         'Technology': { 
             revenue: { min: 3.0, avg: 5.5, max: 8.0 }, 
@@ -428,7 +428,7 @@ function estimateDetailedValuation(company, metrics, referenceCompany) {
 
     const multiples = advancedSectorMultiples[company.sector] || advancedSectorMultiples['Technology'];
 
-    // Estimation basée sur le chiffre d'affaires
+    // Estimate based on revenue
     if (company.revenue) {
         const revenueNum = parseInt(company.revenue.replace(/[€M]/g, ''));
         
@@ -439,17 +439,17 @@ function estimateDetailedValuation(company, metrics, referenceCompany) {
         valuation.factors.push('Multiple de chiffre d\'affaires sectoriel');
     }
 
-    // Estimation basée sur les employés
+    // Estimate based on employees
     if (company.employees) {
         const employeeValuation = company.employees * multiples.employee.avg;
         valuation.estimates.employeeBased = employeeValuation;
         valuation.factors.push('Valorisation par employé');
     }
 
-    // Ajustements qualitatifs
+    // Qualitative adjustments
     let adjustmentFactor = 1.0;
 
-    // Ajustement productivité
+    // Productivity adjustment
     if (metrics.employeeProductivity === 'very_high') {
         adjustmentFactor *= 1.3;
         valuation.adjustments.push('Prime productivité exceptionnelle (+30%)');
@@ -461,7 +461,7 @@ function estimateDetailedValuation(company, metrics, referenceCompany) {
         valuation.adjustments.push('Décote productivité faible (-15%)');
     }
 
-    // Ajustement croissance
+    // Growth adjustment
     if (metrics.growthPotential > 80) {
         adjustmentFactor *= 1.2;
         valuation.adjustments.push('Prime potentiel de croissance (+20%)');
@@ -470,7 +470,7 @@ function estimateDetailedValuation(company, metrics, referenceCompany) {
         valuation.adjustments.push('Décote croissance limitée (-10%)');
     }
 
-    // Ajustement risque
+    // Risk adjustment
     if (company.riskProfile && company.riskProfile.level === 'high') {
         adjustmentFactor *= 0.8;
         valuation.adjustments.push('Décote risque élevé (-20%)');
@@ -479,14 +479,14 @@ function estimateDetailedValuation(company, metrics, referenceCompany) {
         valuation.adjustments.push('Prime risque faible (+10%)');
     }
 
-    // Appliquer les ajustements
+    // Apply adjustments
     Object.keys(valuation.estimates).forEach(key => {
         if (valuation.estimates[key]) {
             valuation.estimates[key] = Math.round(valuation.estimates[key] * adjustmentFactor);
         }
     });
 
-    // Recommandation finale
+    // Final recommendation
     if (valuation.estimates.average) {
         valuation.recommendedValue = valuation.estimates.average;
         valuation.valueRange = {
@@ -507,13 +507,13 @@ function assessMarketPosition(company, allCompanies) {
         threats: []
     };
 
-    // Analyse relative par rapport aux autres entreprises
+    // Relative analysis compared to other companies
     const sameSeclorCompanies = allCompanies.filter(c => 
         c.sector === company.sector && c.name !== company.name
     );
 
     if (sameSeclorCompanies.length > 0) {
-        // Comparaison de la taille
+        // Size comparison
         const avgEmployees = sameSeclorCompanies
             .filter(c => c.employees)
             .reduce((sum, c) => sum + c.employees, 0) / 
@@ -527,7 +527,7 @@ function assessMarketPosition(company, allCompanies) {
             }
         }
 
-        // Position relative
+        // Relative position
         const companyScore = (company.employees || 0) + 
                            (company.revenue ? parseInt(company.revenue.replace(/[€M]/g, '')) * 100 : 0);
         const avgScore = sameSeclorCompanies.reduce((sum, c) => 
@@ -549,7 +549,7 @@ function assessMarketPosition(company, allCompanies) {
         }
     }
 
-    // Analyse SWOT basique
+    // Basic SWOT analysis
     if (company.founding_year) {
         const age = new Date().getFullYear() - company.founding_year;
         if (age > 20) {
@@ -577,13 +577,13 @@ function calculateBenchmarkScores(company, referenceCompany) {
         overall: 50
     };
 
-    // Score de taille (comparé à la référence)
+    // Size score (compared to reference)
     if (company.employees && referenceCompany.employees) {
         const ratio = company.employees / referenceCompany.employees;
         scores.size = Math.min(Math.max(ratio * 50, 10), 100);
     }
 
-    // Score de productivité
+    // Productivity score
     const productivityScores = {
         'very_high': 95,
         'high': 80,
@@ -596,17 +596,17 @@ function calculateBenchmarkScores(company, referenceCompany) {
         scores.productivity = productivityScores[company.financialMetrics.employeeProductivity];
     }
 
-    // Score de croissance
+    // Growth score
     if (company.financialMetrics && company.financialMetrics.growthPotential) {
         scores.growth = company.financialMetrics.growthPotential;
     }
 
-    // Score de stabilité
+    // Stability score
     if (company.financialMetrics && company.financialMetrics.stabilityScore) {
         scores.stability = company.financialMetrics.stabilityScore;
     }
 
-    // Score global pondéré
+    // Weighted overall score
     scores.overall = Math.round(
         scores.size * 0.2 + 
         scores.productivity * 0.3 + 
@@ -625,7 +625,7 @@ function performComparativeAnalysis(companies) {
         trends: {}
     };
 
-    // Résumé statistique
+    // Statistical summary
     const validEmployees = companies.filter(c => c.employees).map(c => c.employees);
     const validRevenues = companies.filter(c => c.revenue).map(c => 
         parseInt(c.revenue.replace(/[€M]/g, ''))
@@ -671,10 +671,10 @@ function performComparativeAnalysis(companies) {
             }))
     };
 
-    // Insights automatiques
+    // Automatic insights
     const mainCompany = companies.find(c => c.isMainCompany);
     if (mainCompany) {
-        // Position dans les rankings
+        // Position in rankings
         const sizeRank = analysis.rankings.bySize.find(r => r.name === mainCompany.name);
         const revenueRank = analysis.rankings.byRevenue.find(r => r.name === mainCompany.name);
         const healthRank = analysis.rankings.byHealthScore.find(r => r.name === mainCompany.name);
@@ -691,7 +691,7 @@ function performComparativeAnalysis(companies) {
             analysis.insights.push(`${mainCompany.name} présente un excellent score de santé financière`);
         }
 
-        // Comparaisons sectorielles
+        // Sector comparisons
         const sectorPeers = companies.filter(c => 
             c.sector === mainCompany.sector && c.name !== mainCompany.name
         );
@@ -712,7 +712,7 @@ function generateSmartRecommendations(companies, comparativeAnalysis) {
 
     if (!mainCompany) return recommendations;
 
-    // Recommandations basées sur la position
+    // Position-based recommendations
     const healthRank = comparativeAnalysis.rankings.byHealthScore.find(r => r.name === mainCompany.name);
     if (healthRank && healthRank.rank > companies.length / 2) {
         recommendations.push({
@@ -728,7 +728,7 @@ function generateSmartRecommendations(companies, comparativeAnalysis) {
         });
     }
 
-    // Recommandations sur la taille
+    // Size recommendations
     if (mainCompany.employees) {
         const avgEmployees = comparativeAnalysis.summary.averageEmployees;
         if (avgEmployees && mainCompany.employees < avgEmployees * 0.5) {
@@ -744,7 +744,7 @@ function generateSmartRecommendations(companies, comparativeAnalysis) {
         }
     }
 
-    // Recommandations sur le risque
+    // Risk recommendations
     if (mainCompany.riskProfile && mainCompany.riskProfile.level === 'high') {
         recommendations.push({
             type: 'risk',
@@ -759,7 +759,7 @@ function generateSmartRecommendations(companies, comparativeAnalysis) {
         });
     }
 
-    // Recommandations sectorielles
+    // Sector recommendations
     const sectorPeers = companies.filter(c => 
         c.sector === mainCompany.sector && c.name !== mainCompany.name
     );
@@ -786,7 +786,7 @@ function generateSmartRecommendations(companies, comparativeAnalysis) {
         }
     }
 
-    // Recommandations d'opportunités
+    // Opportunity recommendations
     if (mainCompany.marketPosition && mainCompany.marketPosition.opportunities) {
         mainCompany.marketPosition.opportunities.forEach(opportunity => {
             recommendations.push({
@@ -799,10 +799,10 @@ function generateSmartRecommendations(companies, comparativeAnalysis) {
         });
     }
 
-    return recommendations.slice(0, 8); // Limiter à 8 recommandations max
+    return recommendations.slice(0, 8); // Limit to 8 recommendations max
 }
 
-// Fonctions utilitaires supplémentaires
+// Additional utility functions
 function determineGrowthStage(company) {
     if (company.founding_year) {
         const age = new Date().getFullYear() - company.founding_year;
@@ -829,7 +829,7 @@ function assessMarketPresence(company) {
 }
 
 function calculateScalabilityIndex(company) {
-    let index = 50; // Base
+    let index = 50; // Base value
     
     if (company.sector === 'Technology') index += 20;
     if (company.isPublic) index += 15;
@@ -842,7 +842,7 @@ function calculateScalabilityIndex(company) {
 }
 
 function calculateStabilityScore(company) {
-    let score = 50; // Base
+    let score = 50; // Base value
     
     if (company.founding_year) {
         const age = new Date().getFullYear() - company.founding_year;
@@ -875,7 +875,7 @@ function generateRiskMitigation(risks) {
         }
     });
     
-    return [...new Set(mitigations)]; // Déduplication
+    return [...new Set(mitigations)]; // Deduplication
 }
 
 function calculateSectorDistribution(companies) {
@@ -929,7 +929,7 @@ function containsSuspiciousContent(text) {
     return suspicious.some(term => text.toLowerCase().includes(term));
 }
 
-// Réutiliser les fonctions d'extraction existantes
+// Reuse existing extraction functions
 function extractSector(content) {
     const patterns = {
         'Technology': ['technology', 'tech', 'it services', 'software', 'digital'],

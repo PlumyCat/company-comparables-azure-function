@@ -6,13 +6,13 @@ const searchService = new SearchService();
 const analysisService = new AnalysisService();
 
 async function searchCompany(request, context) {
-    context.log('Début de searchCompany');
+    context.log('Start of searchCompany');
     const startTime = Date.now();
 
     try {
         const body = await request.json();
 
-        // Validation des paramètres d'entrée
+        // Validate input parameters
         const validation = validateInput(body, {
             query: { required: true, type: 'string', minLength: 2, maxLength: 100 }
         });
@@ -24,13 +24,13 @@ async function searchCompany(request, context) {
         const { query } = body;
         context.log(`Recherche d'entreprise: ${query}`);
 
-        // Validation de sécurité - rejeter les termes suspects
+        // Security check - reject suspicious terms
         const suspiciousTerms = ['test', 'exemple', 'sample', 'demo', 'fake'];
         if (suspiciousTerms.some(term => query.toLowerCase().includes(term))) {
             return createErrorResponse(400, "Nom d'entreprise non autorisé");
         }
 
-        // UTILISER LE SEARCHSERVICE QUI FONCTIONNE
+        // USE THE WORKING SEARCHSERVICE
         console.log("🔍 Début recherche web avec SearchService...");
         const searchResults = await searchService.searchCompanyInfo(query, {
             language: 'fr',
@@ -51,17 +51,17 @@ async function searchCompany(request, context) {
             });
         }
 
-        // Analyser les résultats de recherche pour extraire les infos
+        // Analyze search results to extract information
         console.log("🧠 Analyse des résultats de recherche...");
         let companyProfile;
         
         try {
-            // Essayer d'abord avec l'AnalysisService si il peut traiter les résultats de recherche
+            // First try AnalysisService if it can process the search results
             companyProfile = await analysisService.analyzeSearchResults(query, searchResults);
         } catch (analysisError) {
             console.log("⚠️ AnalysisService échoué, création profil basique:", analysisError.message);
             
-            // Créer un profil basique à partir des résultats de recherche
+            // Create a basic profile from the search results
             companyProfile = createBasicProfileFromSearch(query, searchResults);
         }
 
@@ -73,7 +73,7 @@ async function searchCompany(request, context) {
             });
         }
 
-        // Ajouter des métadonnées de qualité
+        // Add quality metadata
         const dataQuality = {
             confidence: companyProfile.confidence,
             completeness: calculateCompleteness(companyProfile),
@@ -118,17 +118,17 @@ async function searchCompany(request, context) {
     }
 }
 
-// FONCTIONS D'EXTRACTION AMÉLIORÉES
+// IMPROVED EXTRACTION FUNCTIONS
 function createBasicProfileFromSearch(query, searchResults) {
     console.log("🏗️ Création profil basique à partir des résultats web");
     
-    // Collecter tous les résultats
+    // Gather all results
     const allResults = [];
     searchResults.searchResults.forEach(sr => {
         allResults.push(...sr.results);
     });
 
-    // Combiner tout le contenu pour l'analyse
+    // Combine all content for analysis
     const allContent = allResults.map(r => `${r.title} ${r.content}`).join(' ').toLowerCase();
 
     const profile = {
@@ -159,7 +159,7 @@ function createBasicProfileFromSearch(query, searchResults) {
         keyPoints: extractKeyPoints(allResults)
     };
 
-    // Calculer les catégories après extraction
+    // Compute categories after extraction
     if (profile.employees) {
         profile.employeeCategory = categorizeEmployees(profile.employees);
     }
@@ -239,17 +239,17 @@ function extractRegion(content) {
 }
 
 function extractEmployeeCount(content) {
-    // Patterns plus avancés pour trouver le nombre d'employés
+    // More advanced patterns to find employee count
     const patterns = [
-        // Pattern pour "350,000 employees" ou "350 000 employés"
+        // Pattern for "350,000 employees" or "350 000 employés"
         /(\d{1,3}(?:[,\s]\d{3})+)\s*(?:employees|employés|people|personnes|staff|collaborateurs)/gi,
-        // Pattern pour "350k employees" ou "350K employés"
+        // Pattern for "350k employees" or "350K employés"
         /(\d{1,3})[\s,]*k\s*(?:employees|employés|people|personnes|staff|collaborateurs)/gi,
-        // Pattern pour "workforce of 350,000"
+        // Pattern for "workforce of 350,000"
         /workforce.*?(\d{1,3}(?:[,\s]\d{3})+)/gi,
-        // Pattern pour "emploie 350 000 personnes"
+        // Pattern for "emploie 350 000 personnes"
         /emploie.*?(\d{1,3}(?:[,\s]\d{3})+).*?(?:personnes|employés|collaborateurs)/gi,
-        // Pattern plus simple pour des nombres plus petits
+        // Simpler pattern for smaller numbers
         /(\d{2,6})\s*(?:employees|employés|people|personnes|staff|collaborateurs)/gi
     ];
 
@@ -259,12 +259,12 @@ function extractEmployeeCount(content) {
             let numberStr = match[1].replace(/[,\s]/g, '');
             let number = parseInt(numberStr);
             
-            // Si c'est un format "k" (milliers)
+            // If it is a "k" format (thousands)
             if (match[0].toLowerCase().includes('k')) {
                 number = number * 1000;
             }
             
-            // Validation : nombre raisonnable d'employés (entre 1 et 5 millions)
+            // Validate: reasonable employee count (between 1 and 5 million)
             if (number >= 1 && number <= 5000000) {
                 console.log(`🧑‍💼 Employés trouvés: ${number} depuis "${match[0]}"`);
                 return number;
@@ -276,17 +276,17 @@ function extractEmployeeCount(content) {
 }
 
 function extractRevenue(content) {
-    // Patterns pour différents formats de revenus
+    // Patterns for different revenue formats
     const patterns = [
         // "chiffre d'affaires de 22,5 milliards d'euros"
         /chiffre.*?affaires.*?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
-        // "revenue of €22.5 billion" ou "revenus de 22,5 milliards €"
+        // "revenue of €22.5 billion" or "revenus de 22,5 milliards €"
         /(?:revenue|revenus?).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
         // "22.5 billion in revenue"
         /(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?).*?(?:revenue|revenus?|chiffre)/gi,
         // "turnover of €1.2 billion"
         /(?:turnover|ca).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
-        // Formats en millions
+        // Million formats
         /(?:revenue|revenus?|chiffre.*?affaires).*?[€$]?(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?)/gi,
         /(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?).*?(?:revenue|revenus?|euros?|dollars?)/gi
     ];
@@ -299,12 +299,12 @@ function extractRevenue(content) {
             
             if (isNaN(amount)) continue;
             
-            // Convertir en millions d'euros
+            // Convert to millions of euros
             if (match[0].toLowerCase().includes('milliard') || match[0].toLowerCase().includes('billion')) {
                 amount = amount * 1000; // Convertir milliards en millions
             }
             
-            // Validation : montant raisonnable (entre 1M€ et 1000000M€)
+            // Validate: reasonable amount (between 1M€ and 1000000M€)
             if (amount >= 1 && amount <= 1000000) {
                 console.log(`💰 Revenus trouvés: €${amount}M depuis "${match[0]}"`);
                 return `€${Math.round(amount)}M`;
@@ -401,7 +401,7 @@ function extractStockExchange(content) {
 function extractLeadership(content) {
     const leadership = [];
     
-    // Patterns pour différents rôles
+    // Patterns for different roles
     const rolePatterns = {
         'CEO': /(?:ceo|chief executive officer|directeur général|pdg).*?([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
         'CTO': /(?:cto|chief technology officer|directeur technique).*?([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
@@ -416,7 +416,7 @@ function extractLeadership(content) {
             if (name && name.length > 3 && name.length < 50) {
                 leadership.push({ role, name });
                 console.log(`👔 Dirigeant trouvé: ${role} - ${name}`);
-                break; // Un seul par rôle
+                break; // Only one per role
             }
         }
     }
@@ -425,19 +425,19 @@ function extractLeadership(content) {
 }
 
 function extractHeadquarters(content) {
-    // Patterns pour trouver le siège social
+    // Patterns to find headquarters
     const patterns = [
-        // "headquartered in Paris" ou "siège social à Paris"
+        // "headquartered in Paris" or "siège social à Paris"
         /(?:headquartered|siège.*?social).*?(?:in|à|en)\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
         // "based in Paris, France"
         /based.*?in\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
         // "11 rue de Tilsitt, 75017 Paris"
         /\d+.*?rue.*?(\w+),.*?(\d{5})\s*([A-Z][a-z]+)/gi,
-        // "Paris, France" - pattern simple
+        // "Paris, France" - simple pattern
         /([A-Z][a-z]+),\s*([A-Z][a-z]+)/gi
     ];
 
-    // Villes connues pour validation
+    // Known cities for validation
     const knownCities = [
         'Paris', 'London', 'New York', 'Tokyo', 'Berlin', 'Madrid', 
         'Rome', 'Amsterdam', 'Brussels', 'Geneva', 'Zurich', 'Milan',
@@ -450,11 +450,11 @@ function extractHeadquarters(content) {
         for (const match of matches) {
             let city = null;
             
-            // Selon le pattern, la ville peut être dans différents groupes
+            // Depending on the pattern, the city may be in different groups
             if (match[3]) {
-                city = match[3]; // Pattern avec adresse complète
+                city = match[3]; // Full address pattern
             } else if (match[1]) {
-                city = match[1]; // Pattern standard
+                city = match[1]; // Standard pattern
             }
             
             if (city && knownCities.includes(city)) {
@@ -468,19 +468,19 @@ function extractHeadquarters(content) {
 }
 
 function extractFoundingYear(content) {
-    // Patterns pour trouver l'année de création
+    // Patterns to find the founding year
     const patterns = [
-        // "founded in 1967" ou "créée en 1967"
+        // "founded in 1967" or "créée en 1967"
         /(?:founded|created|established|créée?|fondée?).*?(?:in|en)\s*(\d{4})/gi,
-        // "depuis 1967" ou "since 1967"
+        // "depuis 1967" or "since 1967"
         /(?:depuis|since)\s*(\d{4})/gi,
-        // "1967 création" ou "création 1967"
+        // "1967 création" or "création 1967"
         /(?:création|foundation).*?(\d{4})|(\d{4}).*?(?:création|foundation)/gi,
-        // "Capgemini (1967)" ou format avec parenthèses
+        // "Capgemini (1967)" or parenthesis format
         /\((\d{4})\)/g,
-        // Patterns plus spécifiques au contexte
+        // Additional context patterns
         /(?:company|société|entreprise).*?(?:founded|créée?).*?(\d{4})/gi,
-        // Format français "en 1967"
+        // French format "en 1967"
         /en\s*(\d{4})/gi
     ];
 
@@ -490,10 +490,10 @@ function extractFoundingYear(content) {
     for (const pattern of patterns) {
         const matches = [...content.matchAll(pattern)];
         for (const match of matches) {
-            // Le match peut avoir l'année dans le groupe 1 ou 2
+            // The match may have the year in group 1 or 2
             const year = parseInt(match[1] || match[2]);
             
-            // Validation : année réaliste pour une entreprise (entre 1800 et année actuelle)
+            // Validate: realistic year for a company (between 1800 and current year)
             if (year >= 1800 && year <= currentYear) {
                 foundYears.add(year);
                 console.log(`📅 Année de création trouvée: ${year} depuis "${match[0]}"`);
@@ -501,7 +501,7 @@ function extractFoundingYear(content) {
         }
     }
     
-    // Si plusieurs années trouvées, prendre la plus ancienne (probablement la création)
+    // If multiple years are found, take the oldest one (likely the founding year)
     if (foundYears.size > 0) {
         return Math.min(...foundYears);
     }
