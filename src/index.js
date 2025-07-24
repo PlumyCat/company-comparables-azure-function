@@ -1,4 +1,12 @@
 const { app } = require('@azure/functions');
+const { validateConfig } = require('./config');
+
+try {
+    validateConfig();
+} catch (err) {
+    console.error(err.message);
+    process.exit(1);
+}
 
 // Import Azure Functions
 const { searchCompany } = require('./functions/searchCompany');
