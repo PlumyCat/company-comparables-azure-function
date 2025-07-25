@@ -1,0 +1,177 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Company Comparables API",
+    "description": "API exposing Azure Functions to search and analyse company information. This Swagger file can be used to create a Power Apps custom connector for Copilot Studio.",
+    "version": "1.0"
+  },
+  "host": "<functionapp>.azurewebsites.net",
+  "basePath": "/api",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "function_key": {
+      "type": "apiKey",
+      "name": "x-functions-key",
+      "in": "header",
+      "description": "Azure Functions key. Alternatively specify ?code= in the query string"
+    }
+  },
+  "security": [
+    {
+      "function_key": []
+    }
+  ],
+  "paths": {
+    "/searchCompany": {
+      "post": {
+        "summary": "Search for a company on the web",
+        "operationId": "searchCompany",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SearchCompanyRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Company profile and analysis results"
+          }
+        }
+      }
+    },
+    "/getCompanyDetails": {
+      "post": {
+        "summary": "Get detailed company profile",
+        "operationId": "getCompanyDetails",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GetCompanyDetailsRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed company profile"
+          }
+        }
+      }
+    },
+    "/findComparables": {
+      "post": {
+        "summary": "Find comparable companies",
+        "operationId": "findComparables",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/FindComparablesRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of comparable companies"
+          }
+        }
+      }
+    },
+    "/analyzeMetrics": {
+      "post": {
+        "summary": "Analyse metrics and benchmarking",
+        "operationId": "analyzeMetrics",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AnalyzeMetricsRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metrics analysis"
+          }
+        }
+      }
+    },
+    "/testConnection": {
+      "get": {
+        "summary": "Test connection to the search service",
+        "operationId": "testConnectionGet",
+        "responses": {
+          "200": {
+            "description": "Connection status"
+          }
+        }
+      },
+      "post": {
+        "summary": "Test connection to the search service",
+        "operationId": "testConnectionPost",
+        "responses": {
+          "200": {
+            "description": "Connection status"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "SearchCompanyRequest": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Company name to search"
+        }
+      },
+      "required": ["query"]
+    },
+    "GetCompanyDetailsRequest": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "description": "Stock ticker symbol"
+        },
+        "name": {
+          "type": "string",
+          "description": "Company name"
+        }
+      },
+      "required": []
+    },
+    "FindComparablesRequest": {
+      "type": "object",
+      "properties": {
+        "companyName": {"type": "string"},
+        "maxResults": {"type": "integer", "format": "int32"},
+        "minSimilarity": {"type": "integer", "format": "int32"},
+        "preferSameCountry": {"type": "boolean"}
+      },
+      "required": ["companyName"]
+    },
+    "AnalyzeMetricsRequest": {
+      "type": "object",
+      "properties": {
+        "companyName": {"type": "string"},
+        "includeComparables": {"type": "boolean"},
+        "maxComparables": {"type": "integer", "format": "int32"}
+      },
+      "required": ["companyName"]
+    }
+  }
+}
