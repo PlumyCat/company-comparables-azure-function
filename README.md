@@ -20,7 +20,7 @@ See the `src/functions` directory for the implementation of each handler.
 
 ## Project Layout
 
-```
+```text
 company-comparables-azure-function/
 ├── host.json               # Azure Functions host configuration
 ├── package.json            # Node.js dependencies and scripts
@@ -41,24 +41,31 @@ company-comparables-azure-function/
 ## Local Development
 
 1. Clone the repository and install dependencies:
+
    ```bash
    git clone https://github.com/your-org/company-comparables-azure-function.git
    cd company-comparables-azure-function
    npm install
    ```
+
 2. Check code style with ESLint:
+
    ```bash
    npm run lint
    ```
+
 3. Run the test suite:
+
    ```bash
    npm test
    ```
+
 4. Copy `.env.example` to `.env` or create `local.settings.json` and provide the required variables:
     - `SEARXNG_URL` – URL of your SearXNG instance
     - `CLIENT_ID`, `CLIENT_SECRET`, `TENANT_ID`, `TOKEN_URL` – Azure AD credentials
     - `CACHE_TIMEOUT` – cache duration for web search results in milliseconds (default 300000)
 5. Start the functions host:
+
    ```bash
    npm run dev
    ```
@@ -68,6 +75,7 @@ company-comparables-azure-function/
 Requests must be sent with the `Content-Type: application/json` header. Example payloads are shown below.
 
 ### `POST /api/searchCompany`
+
 ```json
 {
   "query": "Microsoft"
@@ -75,6 +83,7 @@ Requests must be sent with the `Content-Type: application/json` header. Example 
 ```
 
 ### `POST /api/getCompanyDetails`
+
 ```json
 {
   "name": "Microsoft" 
@@ -82,6 +91,7 @@ Requests must be sent with the `Content-Type: application/json` header. Example 
 ```
 
 ### `POST /api/findComparables`
+
 ```json
 {
   "companyName": "Microsoft",
@@ -90,6 +100,7 @@ Requests must be sent with the `Content-Type: application/json` header. Example 
 ```
 
 ### `POST /api/analyzeMetrics`
+
 ```json
 {
   "companyName": "Microsoft",
@@ -98,11 +109,13 @@ Requests must be sent with the `Content-Type: application/json` header. Example 
 ```
 
 ### `GET /api/testConnection`
+
 Returns a JSON object describing the connectivity status.
 
 ## Deployment
 
 Deploy the function app using the Azure CLI:
+
 ```bash
 az login
 az group create --name rg-comparables --location "West Europe"
@@ -116,6 +129,7 @@ az functionapp create \
   --storage-account <storage>
 func azure functionapp publish company-comparables-func
 ```
+
 Remember to configure the same environment variables in the Azure portal.
 
 ## License
@@ -127,8 +141,10 @@ This project is licensed under the MIT License.
 We welcome contributions via GitHub pull requests. Fork the repository,
 create a feature branch and submit your changes as a PR.
 Before opening a PR please run:
+
 ```bash
 npm run lint
 npm test
 ```
+
 to ensure the codebase remains consistent.
