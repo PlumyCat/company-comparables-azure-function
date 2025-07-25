@@ -22,30 +22,30 @@ app.setup({
 // Register HTTP functions
 app.http('searchCompany', {
     methods: ['POST'],
-    authLevel: 'anonymous',
+    authLevel: 'function',
     handler: searchCompany
 });
 
 app.http('getCompanyDetails', {
     methods: ['POST'],
-    authLevel: 'anonymous',
+    authLevel: 'function',
     handler: getCompanyDetails
 });
 
 app.http('findComparables', {
     methods: ['POST'],
-    authLevel: 'anonymous',
+    authLevel: 'function',
     handler: findComparables
 });
 
 app.http('analyzeMetrics', {
     methods: ['POST'],
-    authLevel: 'anonymous',
+    authLevel: 'function',
     handler: analyzeMetrics
 });
 
 app.http('testConnection', {
     methods: ['GET', 'POST'],
-    authLevel: 'anonymous',
+    authLevel: 'function',
     handler: testConnection
 });

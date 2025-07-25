@@ -1,10 +1,8 @@
 const { SearchService } = require('../services/searchService');
-const { AnalysisService } = require('../services/analysisService');
 const { validateInput, createResponse, createErrorResponse } = require('../utils/helpers');
 const logger = require('../utils/logger');
 
 const searchService = new SearchService();
-const analysisService = new AnalysisService();
 
 async function findComparables(request, context) {
     context.log('Start of findComparables');

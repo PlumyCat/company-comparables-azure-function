@@ -69,7 +69,7 @@ async function analyzeMetrics(request, context) {
         const analyzedCompanies = allCompanies.map((company, index) => {
             const metrics = calculateAdvancedFinancialMetrics(company);
             const riskProfile = assessComprehensiveRiskProfile(company, metrics);
-            const valuation = estimateDetailedValuation(company, metrics, mainProfile);
+            const valuation = estimateDetailedValuation(company, metrics);
             const marketPosition = assessMarketPosition(company, allCompanies);
 
             return {
@@ -398,7 +398,7 @@ function assessComprehensiveRiskProfile(company, metrics) {
     };
 }
 
-function estimateDetailedValuation(company, metrics, referenceCompany) {
+function estimateDetailedValuation(company, metrics) {
     const valuation = {
         method: 'multi_factor_analysis',
         confidence: company.confidence > 0.7 ? 'medium' : 'low',
@@ -1025,13 +1025,13 @@ function extractRevenue(content) {
     const patterns = [
         /revenue.*?€(\d{1,3}(?:,\d{3})*)\s*(?:million|billion)/gi,
         /€(\d{1,3}(?:,\d{3})*)\s*(?:million|billion)/gi,
-        /chiffre.*?affaires.*?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?)/gi
+        /chiffre.*?affaires.*?(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?)/gi
     ];
 
     for (const pattern of patterns) {
         const match = content.match(pattern);
         if (match) {
-            let amount = parseInt(match[1].replace(/[,\.]/g, ''));
+            let amount = parseInt(match[1].replace(/[,.]/g, ''));
             if (match[0].includes('billion') || match[0].includes('milliard')) {
                 amount *= 1000;
             }

@@ -20,7 +20,7 @@ class AnalysisService {
         };
     }
 
-    async analyzeCompany(companyName, options = {}) {
+    async analyzeCompany(companyName) {
         const cacheKey = `profile_${companyName.toLowerCase()}`;
         const cached = this.getCachedData(cacheKey);
         if (cached) return cached;
@@ -93,13 +93,10 @@ class AnalysisService {
             keyPoints: []
         };
 
-        let totalResults = 0;
         let relevantResults = 0;
 
         searchResults.forEach(({ query, result }) => {
             if (!result || !result.results) return;
-
-            totalResults += result.results.length;
 
             result.results.forEach(item => {
                 if (this.isRelevantResult(companyName, item)) {
@@ -181,8 +178,8 @@ class AnalysisService {
                 normalizedCompany.size_category,
                 normalizedCompany.country,
                 normalizedCompany.industry
-            ).catch(error => {
-                return this.getFallbackPrivateComparables(normalizedCompany.sector, normalizedCompany.size_category, normalizedCompany.country);
+            ).catch(() => {
+                return this.getFallbackPrivateComparables(normalizedCompany.sector);
             });
 
             const rankedComparables = this.rankForFinancialAnalysis(
@@ -194,11 +191,12 @@ class AnalysisService {
 
             return rankedComparables;
         } catch (error) {
-            const fallbackResults = this.getFallbackPrivateComparables('Technology', 'PME', 'France');
+            const fallbackResults = this.getFallbackPrivateComparables('Technology');
             return fallbackResults;
         }
     }
 
+    // eslint-disable-next-line no-unused-vars
     async findPrivateComparables(sector, sizeCategory, country = 'France', industry = null) {
         try {
             const sectorQuery = `"${sector}" entreprises France secteur ${sizeCategory}`;
@@ -212,15 +210,15 @@ class AnalysisService {
                 return companies.slice(0, 8);
             }
 
-            return this.getFallbackPrivateComparables(sector, sizeCategory, country);
+            return this.getFallbackPrivateComparables(sector);
         } catch (error) {
-            return this.getFallbackPrivateComparables(sector, sizeCategory, country);
+            return this.getFallbackPrivateComparables(sector);
         }
     }
 
     extractCompaniesFromResults(searchResult, targetSector, targetIndustry) {
         if (!searchResult || !searchResult.results) {
-            return this.getFallbackPrivateComparables(targetSector, 'PME', 'France').slice(0, 2);
+            return this.getFallbackPrivateComparables(targetSector).slice(0, 2);
         }
 
         const companies = [];
@@ -248,20 +246,20 @@ class AnalysisService {
         });
 
         if (companies.length === 0) {
-            return this.getFallbackPrivateComparables(targetSector, 'PME', 'France').slice(0, 3);
+            return this.getFallbackPrivateComparables(targetSector).slice(0, 3);
         }
 
         return companies;
     }
 
-    extractCompanyNamesFromContent(title, content, url) {
+    extractCompanyNamesFromContent(title, content) {
         const companies = [];
         const text = `${title} ${content}`;
 
         const priorityPatterns = [
-            /\b([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s&\-'\.]{2,35})\s+(?:SAS|SARL|SA|EURL|SNC|SASU)\b/g,
-            /\b([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s&\-'\.]{2,35})\s+(?:Ltd|LLC|Inc|Corp|GmbH|AG|Limited)\b/gi,
-            /(?:Groupe|Group|Holding)\s+([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s&\-'\.]{2,35})\b/g,
+            /\b([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s&\-'.]{2,35})\s+(?:SAS|SARL|SA|EURL|SNC|SASU)\b/g,
+            /\b([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s&\-'.]{2,35})\s+(?:Ltd|LLC|Inc|Corp|GmbH|AG|Limited)\b/gi,
+            /(?:Groupe|Group|Holding)\s+([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s&\-'.]{2,35})\b/g,
             /\b([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]{2,20})\s*&\s*([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]{2,20})\b/g
         ];
 
@@ -311,9 +309,7 @@ class AnalysisService {
 
         if (allComparables.length === 0) {
             return this.getFallbackPrivateComparables(
-                referenceCompany.sector || 'Technology',
-                referenceCompany.size_category || 'PME',
-                referenceCompany.country || 'France'
+                referenceCompany.sector || 'Technology'
             );
         }
 
@@ -460,7 +456,7 @@ class AnalysisService {
         }
 
         const bestSector = Object.entries(sectorScores)
-            .filter(([sector, score]) => score >= 1)
+            .filter(([, score]) => score >= 1)
             .sort(([, a], [, b]) => b - a)[0];
 
         return bestSector ? bestSector[0] : null;
@@ -482,7 +478,7 @@ class AnalysisService {
         });
     }
 
-    getFallbackPrivateComparables(sector, sizeCategory, country) {
+    getFallbackPrivateComparables(sector) {
         const fallbackData = {
             'Technology': [
                 {
@@ -545,8 +541,6 @@ class AnalysisService {
             extractionDate: new Date().toISOString()
         }));
     }
-
-    // --- Extraction helpers -------------------------------------------------
     extractIndustry(content) {
         const industries = {
             'IT Consulting': ['it consulting', 'technology consulting', 'digital consulting', 'systems integration'],
@@ -592,12 +586,12 @@ class AnalysisService {
 
     extractRevenue(content) {
         const patterns = [
-            /chiffre.*?affaires.*?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
-            /(?:revenue|revenus?).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
-            /(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?).*?(?:revenue|revenus?|chiffre)/gi,
-            /(?:turnover|ca).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
-            /(?:revenue|revenus?|chiffre.*?affaires).*?[€$]?(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?)/gi,
-            /(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?).*?(?:revenue|revenus?|euros?|dollars?)/gi
+            /chiffre.*?affaires.*?(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+            /(?:revenue|revenus?).*?[€$]?(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+            /(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?).*?(?:revenue|revenus?|chiffre)/gi,
+            /(?:turnover|ca).*?[€$]?(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+            /(?:revenue|revenus?|chiffre.*?affaires).*?[€$]?(\d{1,4}(?:[,.]\d{1,3})*)\s*(?:millions?)/gi,
+            /(\d{1,4}(?:[,.]\d{1,3})*)\s*(?:millions?).*?(?:revenue|revenus?|euros?|dollars?)/gi
         ];
 
         for (const pattern of patterns) {

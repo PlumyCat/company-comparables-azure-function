@@ -1,4 +1,3 @@
-const util = require('util');
 
 function formatArgs(args) {
     return args.map(arg => {

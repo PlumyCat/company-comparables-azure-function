@@ -10,7 +10,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@azure/functions": "^4.0.0"
+    "@azure/functions": "^4.0.0",
+    "glob": "^11.0.3"
   },
   "devDependencies": {
     "eslint": "^8.57.1",

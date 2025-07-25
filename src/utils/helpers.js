@@ -192,7 +192,12 @@ function sanitizeString(input, options = {}) {
     // Remove control characters
     if (options.removeControlChars !== false) {
         cleaned = cleaned.replace(/[\r\n]+/g, ' ');
-        cleaned = cleaned.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        // Utilise une plage continue pour éviter les caractères problématiques
+        // Remplacement manuel des caractères de contrôle
+        cleaned = cleaned.split('').filter(c => {
+            const code = c.charCodeAt(0);
+            return (code > 31 && code !== 127) || c === ' ';
+        }).join('');
     }
 
     // Limit the length

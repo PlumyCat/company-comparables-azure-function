@@ -55,13 +55,13 @@ async function searchCompany(request, context) {
         // Analyze search results to extract information
         logger.info("🧠 Analyse des résultats de recherche...");
         let companyProfile;
-        
+
         try {
             // First try AnalysisService if it can process the search results
             companyProfile = await analysisService.analyzeSearchResults(query, searchResults);
         } catch (analysisError) {
             logger.info("⚠️ AnalysisService échoué, création profil basique:", analysisError.message);
-            
+
             // Create a basic profile from the search results
             companyProfile = createBasicProfileFromSearch(query, searchResults);
         }
@@ -122,7 +122,7 @@ async function searchCompany(request, context) {
 // IMPROVED EXTRACTION FUNCTIONS
 function createBasicProfileFromSearch(query, searchResults) {
     logger.info("🏗️ Création profil basique à partir des résultats web");
-    
+
     // Gather all results
     const allResults = [];
     searchResults.searchResults.forEach(sr => {
@@ -234,7 +234,7 @@ function extractRegion(content) {
         'India': 'Asia',
         'China': 'Asia'
     };
-    
+
     const country = extractCountry(content);
     return countryToRegion[country] || 'Global';
 }
@@ -259,12 +259,12 @@ function extractEmployeeCount(content) {
         for (const match of matches) {
             let numberStr = match[1].replace(/[,\s]/g, '');
             let number = parseInt(numberStr);
-            
+
             // If it is a "k" format (thousands)
             if (match[0].toLowerCase().includes('k')) {
                 number = number * 1000;
             }
-            
+
             // Validate: reasonable employee count (between 1 and 5 million)
             if (number >= 1 && number <= 5000000) {
                 logger.info(`🧑‍💼 Employés trouvés: ${number} depuis "${match[0]}"`);
@@ -272,7 +272,7 @@ function extractEmployeeCount(content) {
             }
         }
     }
-    
+
     return null;
 }
 
@@ -280,16 +280,16 @@ function extractRevenue(content) {
     // Patterns for different revenue formats
     const patterns = [
         // "chiffre d'affaires de 22,5 milliards d'euros"
-        /chiffre.*?affaires.*?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+        /chiffre.*?affaires.*?(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
         // "revenue of €22.5 billion" or "revenus de 22,5 milliards €"
-        /(?:revenue|revenus?).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+        /(?:revenue|revenus?).*?[€$]?(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
         // "22.5 billion in revenue"
-        /(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?).*?(?:revenue|revenus?|chiffre)/gi,
+        /(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?).*?(?:revenue|revenus?|chiffre)/gi,
         // "turnover of €1.2 billion"
-        /(?:turnover|ca).*?[€$]?(\d{1,3}(?:[,\.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
+        /(?:turnover|ca).*?[€$]?(\d{1,3}(?:[,.]\d{1,3})*)\s*(?:milliards?|billions?)/gi,
         // Million formats
-        /(?:revenue|revenus?|chiffre.*?affaires).*?[€$]?(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?)/gi,
-        /(\d{1,4}(?:[,\.]\d{1,3})*)\s*(?:millions?).*?(?:revenue|revenus?|euros?|dollars?)/gi
+        /(?:revenue|revenus?|chiffre.*?affaires).*?[€$]?(\d{1,4}(?:[,.]\d{1,3})*)\s*(?:millions?)/gi,
+        /(\d{1,4}(?:[,.]\d{1,3})*)\s*(?:millions?).*?(?:revenue|revenus?|euros?|dollars?)/gi
     ];
 
     for (const pattern of patterns) {
@@ -297,14 +297,14 @@ function extractRevenue(content) {
         for (const match of matches) {
             let amountStr = match[1].replace(/[,\s]/g, '').replace(',', '.');
             let amount = parseFloat(amountStr);
-            
+
             if (isNaN(amount)) continue;
-            
+
             // Convert to millions of euros
             if (match[0].toLowerCase().includes('milliard') || match[0].toLowerCase().includes('billion')) {
                 amount = amount * 1000; // Convertir milliards en millions
             }
-            
+
             // Validate: reasonable amount (between 1M€ and 1000000M€)
             if (amount >= 1 && amount <= 1000000) {
                 logger.info(`💰 Revenus trouvés: €${amount}M depuis "${match[0]}"`);
@@ -312,7 +312,7 @@ function extractRevenue(content) {
             }
         }
     }
-    
+
     return null;
 }
 
@@ -369,13 +369,13 @@ function extractActivities(content) {
 function extractCompetitors(content) {
     const competitors = [];
     const knownCompetitors = ['accenture', 'deloitte', 'ibm', 'tcs', 'infosys', 'wipro', 'atos'];
-    
+
     for (const competitor of knownCompetitors) {
         if (content.includes(competitor)) {
             competitors.push(competitor.charAt(0).toUpperCase() + competitor.slice(1));
         }
     }
-    
+
     return competitors;
 }
 
@@ -401,7 +401,7 @@ function extractStockExchange(content) {
 
 function extractLeadership(content) {
     const leadership = [];
-    
+
     // Patterns for different roles
     const rolePatterns = {
         'CEO': /(?:ceo|chief executive officer|directeur général|pdg).*?([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
@@ -409,7 +409,7 @@ function extractLeadership(content) {
         'CFO': /(?:cfo|chief financial officer|directeur financier).*?([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
         'Chairman': /(?:chairman|président).*?([A-Z][a-z]+\s+[A-Z][a-z]+)/gi
     };
-    
+
     for (const [role, pattern] of Object.entries(rolePatterns)) {
         const matches = [...content.matchAll(pattern)];
         for (const match of matches) {
@@ -421,7 +421,7 @@ function extractLeadership(content) {
             }
         }
     }
-    
+
     return leadership;
 }
 
@@ -440,7 +440,7 @@ function extractHeadquarters(content) {
 
     // Known cities for validation
     const knownCities = [
-        'Paris', 'London', 'New York', 'Tokyo', 'Berlin', 'Madrid', 
+        'Paris', 'London', 'New York', 'Tokyo', 'Berlin', 'Madrid',
         'Rome', 'Amsterdam', 'Brussels', 'Geneva', 'Zurich', 'Milan',
         'Dublin', 'Stockholm', 'Copenhagen', 'Mumbai', 'Bangalore',
         'Singapore', 'Hong Kong', 'Sydney', 'Toronto', 'Montreal'
@@ -450,21 +450,21 @@ function extractHeadquarters(content) {
         const matches = [...content.matchAll(pattern)];
         for (const match of matches) {
             let city = null;
-            
+
             // Depending on the pattern, the city may be in different groups
             if (match[3]) {
                 city = match[3]; // Full address pattern
             } else if (match[1]) {
                 city = match[1]; // Standard pattern
             }
-            
+
             if (city && knownCities.includes(city)) {
                 logger.info(`🏢 Siège social trouvé: ${city} depuis "${match[0]}"`);
                 return city;
             }
         }
     }
-    
+
     return null;
 }
 
@@ -493,7 +493,7 @@ function extractFoundingYear(content) {
         for (const match of matches) {
             // The match may have the year in group 1 or 2
             const year = parseInt(match[1] || match[2]);
-            
+
             // Validate: realistic year for a company (between 1800 and current year)
             if (year >= 1800 && year <= currentYear) {
                 foundYears.add(year);
@@ -501,17 +501,17 @@ function extractFoundingYear(content) {
             }
         }
     }
-    
+
     // If multiple years are found, take the oldest one (likely the founding year)
     if (foundYears.size > 0) {
         return Math.min(...foundYears);
     }
-    
+
     return null;
 }
 
 function guessSizeCategory(content) {
-    if (content.includes('multinational') || content.includes('global') || 
+    if (content.includes('multinational') || content.includes('global') ||
         content.includes('fortune') || content.includes('leader')) {
         return 'large';
     }
@@ -522,19 +522,19 @@ function guessSizeCategory(content) {
 }
 
 function guessIsPublic(content) {
-    return content.includes('public') || content.includes('stock') || 
-           content.includes('nasdaq') || content.includes('nyse') ||
-           content.includes('euronext') || content.includes('listed');
+    return content.includes('public') || content.includes('stock') ||
+        content.includes('nasdaq') || content.includes('nyse') ||
+        content.includes('euronext') || content.includes('listed');
 }
 
 function createDescription(results) {
     if (results.length > 0) {
-        const bestResult = results.find(r => 
-            r.content.length > 100 && 
+        const bestResult = results.find(r =>
+            r.content.length > 100 &&
             !r.url.includes('linkedin.com') &&
             !r.url.includes('wikipedia.org')
         ) || results[0];
-        
+
         return bestResult.content.substring(0, 300) + '...';
     }
     return null;
@@ -543,8 +543,8 @@ function createDescription(results) {
 function extractWebsite(results) {
     for (const result of results) {
         const url = result.url.toLowerCase();
-        if (url.includes('.com/') && 
-            !url.includes('linkedin') && 
+        if (url.includes('.com/') &&
+            !url.includes('linkedin') &&
             !url.includes('wikipedia') &&
             !url.includes('google') &&
             !url.includes('yahoo')) {
