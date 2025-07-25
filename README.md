@@ -110,7 +110,7 @@ az functionapp create \
   --resource-group rg-comparables \
   --consumption-plan-location "West Europe" \
   --runtime node \
-  --runtime-version 18 \
+  --runtime-version 22 \
   --functions-version 4 \
   --name company-comparables-func \
   --storage-account <storage>
