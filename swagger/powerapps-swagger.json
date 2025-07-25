@@ -10,6 +10,19 @@
   "schemes": ["https"],
   "consumes": ["application/json"],
   "produces": ["application/json"],
+  "securityDefinitions": {
+    "function_key": {
+      "type": "apiKey",
+      "name": "x-functions-key",
+      "in": "header",
+      "description": "Azure Functions key. Alternatively specify ?code= in the query string"
+    }
+  },
+  "security": [
+    {
+      "function_key": []
+    }
+  ],
   "paths": {
     "/searchCompany": {
       "post": {
