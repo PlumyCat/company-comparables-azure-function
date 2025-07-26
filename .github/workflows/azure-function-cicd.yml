@@ -37,7 +37,7 @@ jobs:
       - name: 'Deploy to Azure Functions'
         uses: Azure/functions-action@v2
         with:
-          app-name: 'NOM_DE_TA_FUNCTION_APP'
+          app-name: 'ContratAnalist'
           package: '.'
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
           # ou deployment-method: 'auto'
