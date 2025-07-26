@@ -1,4 +1,3 @@
-
 name: Build and deploy Node.js project to Azure Function App - company-comparables-azure-function
 
 on:
